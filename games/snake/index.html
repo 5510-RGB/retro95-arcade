@@ -75,6 +75,12 @@
       display: block;
       background-color: var(--lcd-bg);
       border: 2px solid var(--lcd-dark);
+      max-width: 100%;
+      height: auto;
+    }
+
+    @media (max-width: 520px) {
+      .phone-frame { padding: 10px; border-width: 3px; width: 96vw; }
     }
 
     .controls-bar {

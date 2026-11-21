@@ -44,7 +44,10 @@
       display: block;
       background: #03050a;
       border: 1px solid #007a88;
+      max-width: 100%;
+      height: auto;
     }
+    .cabinet { max-width: 96vw; }
 
     .btn {
       background: transparent;
@@ -308,9 +311,18 @@
 
     canvas.addEventListener("mousemove", e => {
       const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
+      const scaleX = canvas.width / rect.width;
+      const mx = (e.clientX - rect.left) * scaleX;
       paddle.x = Math.max(8, Math.min(canvas.width - paddle.w - 8, mx - paddle.w / 2));
     });
+
+    canvas.addEventListener("touchmove", e => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const mx = (e.touches[0].clientX - rect.left) * scaleX;
+      paddle.x = Math.max(8, Math.min(canvas.width - paddle.w - 8, mx - paddle.w / 2));
+    }, { passive: false });
 
     document.getElementById("start-btn").addEventListener("click", startGame);
 

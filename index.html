@@ -150,9 +150,34 @@
       </div>
 
       <div class="arcade-content">
-        <!-- Oyun Iframe Kabini -->
-        <div class="iframe-cabinet win-inset" id="iframe-cabinet-box">
-          <iframe id="arcade-iframe" src="about:blank" allow="autoplay; fullscreen"></iframe>
+        <!-- Oyun Iframe Kabini + Mobil / Dokunmatik Kontrol Paneli -->
+        <div class="cabinet-wrapper">
+          <div class="iframe-cabinet win-inset" id="iframe-cabinet-box">
+            <iframe id="arcade-iframe" src="about:blank" allow="autoplay; fullscreen"></iframe>
+          </div>
+
+          <!-- Mobil / Tablet Sanal Gamepad -->
+          <div class="mobile-gamepad win-panel" id="mobile-gamepad">
+            <div class="dpad-cluster">
+              <button class="win-btn pad-btn pad-up" data-key="ArrowUp" data-code="ArrowUp">▲</button>
+              <div class="dpad-mid-row">
+                <button class="win-btn pad-btn pad-left" data-key="ArrowLeft" data-code="ArrowLeft">◀</button>
+                <button class="win-btn pad-btn pad-down" data-key="ArrowDown" data-code="ArrowDown">▼</button>
+                <button class="win-btn pad-btn pad-right" data-key="ArrowRight" data-code="ArrowRight">▶</button>
+              </div>
+            </div>
+
+            <div class="action-cluster">
+              <div class="action-top-row">
+                <button class="win-btn pad-small-btn" data-key="Enter" data-code="Enter">BAŞLAT</button>
+                <button class="win-btn pad-small-btn" data-key="p" data-code="KeyP">DURAKLAT</button>
+              </div>
+              <div class="action-main-row">
+                <button class="win-btn pad-action-btn" data-key="ArrowUp" data-code="ArrowUp">↻ DÖNDÜR</button>
+                <button class="win-btn pad-action-btn pad-fire-btn" data-key=" " data-code="Space">🔥 ATEŞ / DÜŞÜR</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Sağ Bilgi ve Kontrol Rehberi -->

@@ -165,8 +165,9 @@
 
     <div id="board" class="board-frame"></div>
 
-    <div style="font-size: 11px; text-align: center; color: #222;">
-      Sol Tık: Hücreyi Aç | Sağ Tık: Bayrak Koy (🚩) | Puan: <strong id="score-label">0</strong>
+    <div style="font-size: 11px; text-align: center; color: #222; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+      <button class="win-btn" id="flag-mode-btn">🎯 MOD: AÇ (SOL TIK)</button>
+      <span>Puan: <strong id="score-label">0</strong></span>
     </div>
   </div>
 
@@ -188,6 +189,7 @@
     let firstClick = true;
     let isGameOver = false;
     let score = 0;
+    let flagMode = false;
 
     const boardEl = document.getElementById("board");
     const mineCountEl = document.getElementById("mine-count");
@@ -245,7 +247,10 @@
         for (let c = 0; c < cols; c++) {
           const el = document.createElement("div");
           el.className = "cell";
-          el.addEventListener("click", () => handleLeftClick(r, c));
+          el.addEventListener("click", () => {
+            if (flagMode) handleRightClick(r, c);
+            else handleLeftClick(r, c);
+          });
           el.addEventListener("contextmenu", e => {
             e.preventDefault();
             handleRightClick(r, c);
@@ -390,6 +395,13 @@
     }
 
     faceBtn.addEventListener("click", initGame);
+
+    const flagModeBtn = document.getElementById("flag-mode-btn");
+    flagModeBtn.addEventListener("click", () => {
+      flagMode = !flagMode;
+      flagModeBtn.innerText = flagMode ? "🚩 MOD: BAYRAK KOY" : "🎯 MOD: HÜCRE AÇ";
+      flagModeBtn.classList.toggle("active", flagMode);
+    });
 
     document.querySelectorAll("[data-diff]").forEach(btn => {
       btn.addEventListener("click", () => {

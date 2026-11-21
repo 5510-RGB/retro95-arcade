@@ -467,6 +467,9 @@
       infoModalEl.classList.add("hidden");
     });
 
+    // Mobil / Dokunmatik Sanal Gamepad Tuşlarını Aktif Iframe'e İlet
+    setupMobileGamepad();
+
     // Üst Menü Öğeleri
     document.getElementById("menu-all-games").addEventListener("click", () => {
       state.selectedCategory = "ALL";
@@ -514,6 +517,67 @@
       state.selectedCategory = "FAVORITES";
       renderCategoryTree();
       renderGamesGrid();
+    });
+  }
+
+  // Mobil / Dokunmatik Gamepad Desteği (Hem bas-çek hem basılı tutma destekli)
+  function setupMobileGamepad() {
+    const padButtons = document.querySelectorAll("#mobile-gamepad [data-key]");
+    let holdTimer = null;
+
+    function dispatchKeyToGame(type, key, code) {
+      if (!arcadeIframeEl || !arcadeIframeEl.contentWindow) return;
+      try {
+        const win = arcadeIframeEl.contentWindow;
+        const doc = win.document;
+        const evt = new KeyboardEvent(type, {
+          key: key,
+          code: code,
+          bubbles: true,
+          cancelable: true
+        });
+        doc.dispatchEvent(evt);
+        win.dispatchEvent(evt);
+      } catch (e) {
+        // ignore cross-frame error if any
+      }
+    }
+
+    padButtons.forEach(btn => {
+      const key = btn.getAttribute("data-key");
+      const code = btn.getAttribute("data-code");
+
+      const handlePressStart = e => {
+        e.preventDefault();
+        btn.classList.add("active");
+        dispatchKeyToGame("keydown", key, code);
+
+        if (holdTimer) clearInterval(holdTimer);
+        // Tetris veya Snake gibi keydown tekrarlarıyla çalışan oyunlar için basılı tutunca tekrarla
+        if (["ArrowLeft", "ArrowRight", "ArrowDown", "Space"].includes(code)) {
+          holdTimer = setInterval(() => {
+            dispatchKeyToGame("keydown", key, code);
+          }, 115);
+        }
+      };
+
+      const handlePressEnd = e => {
+        e.preventDefault();
+        btn.classList.remove("active");
+        if (holdTimer) {
+          clearInterval(holdTimer);
+          holdTimer = null;
+        }
+        dispatchKeyToGame("keyup", key, code);
+      };
+
+      btn.addEventListener("touchstart", handlePressStart, { passive: false });
+      btn.addEventListener("touchend", handlePressEnd, { passive: false });
+      btn.addEventListener("touchcancel", handlePressEnd, { passive: false });
+
+      btn.addEventListener("mousedown", handlePressStart);
+      btn.addEventListener("mouseup", handlePressEnd);
+      btn.addEventListener("mouseleave", handlePressEnd);
     });
   }
 
