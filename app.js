@@ -17,7 +17,7 @@
     searchQuery: "",
     selectedCategory: "ALL", // ALL, FAVORITES, veya kategori adı
     selectedDecade: "ALL",   // ALL, 70s, 80s, 90s, 00s
-    sortBy: "year-asc",      // year-asc, year-desc, title-asc
+    sortBy: "default",       // default, year-asc, year-desc, title-asc
     favorites: loadFromStorage(STORAGE_FAVS_KEY, []),
     highScores: loadFromStorage(STORAGE_SCORES_KEY, {}),
     activeGameId: null

@@ -4,6 +4,29 @@
 
 window.GAMES_CATALOG = [
   {
+    id: "tetris-1984",
+    title: "TETRIS (1984)",
+    year: 1984,
+    decade: "80s",
+    category: "Bulmaca",
+    developer: "Aleksey Pajitnov",
+    platform: "Electronika 60 / IBM PC",
+    path: "games/tetris/index.html",
+    icon: "🧱",
+    accentColor: "#008080",
+    featured: true,
+    shortDesc: "Sovyet Bilimler Akademisi'nde Electronika 60 terminalinde doğan efsanevi blok yerleştirme oyunu.",
+    story: "1984 yılında Moskova'da Aleksey Pajitnov tarafından Electronika 60 bilgisayarı üzerinde geliştirildi. Orijinal bilgisayarda grafik kartı olmadığı için bloklar köşeli parantezler '[]' kullanılarak ASCII karakterleriyle çizilmişti. Daha sonra 1985'te Vadim Gerasimov tarafından IBM PC'ye renkli olarak uyarlandı. Bu sürümde hem 1984 ASCII terminal modunu hem de 1985 renkli PC modunu deneyimleyebilirsiniz.",
+    controls: [
+      { key: "← / →", action: "Parçayı Sağa / Sola Kaydır" },
+      { key: "↑", action: "Saat Yönünde Döndür" },
+      { key: "↓", action: "Hızlı İndir (Yumuşak Düşüş)" },
+      { key: "SPACE", action: "Anında İndir (Sert Düşüş)" },
+      { key: "P", action: "Oyunu Duraklat / Devam Ettir" },
+      { key: "ENTER", action: "Oyunu Başlat" }
+    ]
+  },
+  {
     id: "pong-1972",
     title: "PONG (1972)",
     year: 1972,
@@ -32,7 +55,7 @@ window.GAMES_CATALOG = [
     developer: "Nolan Bushnell & Steve Wozniak",
     platform: "Atari Arcade / Taito",
     path: "games/breakout/index.html",
-    icon: "🧱",
+    icon: "🎯",
     accentColor: "#006680",
     featured: true,
     shortDesc: "Topu raketle sektirerek renkli tuğla duvarlarını yıktığınız efsanevi refleks oyunu.",
@@ -79,29 +102,6 @@ window.GAMES_CATALOG = [
     story: "1980 yılında Namco tasarımcısı Toru Iwatani'nin bir dilimi alınmış pizzadan ilham alarak yarattığı Pac-Man, uzay ve savaş temalı oyunların domine ettiği arcade salonlarına herkesin sevebileceği renkli bir labirent deneyimi getirdi ve 80'li yılların en büyük popüler kültür ikonu oldu.",
     controls: [
       { key: "Ok Tuşları / WASD", action: "Pac-Man'i Labirentte Yönlendir" },
-      { key: "ENTER", action: "Oyunu Başlat" }
-    ]
-  },
-  {
-    id: "tetris-1984",
-    title: "TETRIS (1984)",
-    year: 1984,
-    decade: "80s",
-    category: "Bulmaca",
-    developer: "Aleksey Pajitnov",
-    platform: "Electronika 60 / IBM PC",
-    path: "games/tetris/index.html",
-    icon: "🟩",
-    accentColor: "#008080",
-    featured: true,
-    shortDesc: "Sovyet Bilimler Akademisi'nde Electronika 60 terminalinde doğan efsanevi blok yerleştirme oyunu.",
-    story: "1984 yılında Moskova'da Aleksey Pajitnov tarafından Electronika 60 bilgisayarı üzerinde geliştirildi. Orijinal bilgisayarda grafik kartı olmadığı için bloklar köşeli parantezler '[]' kullanılarak ASCII karakterleriyle çizilmişti. Daha sonra 1985'te Vadim Gerasimov tarafından IBM PC'ye renkli olarak uyarlandı. Bu sürümde hem 1984 ASCII terminal modunu hem de 1985 renkli PC modunu deneyimleyebilirsiniz.",
-    controls: [
-      { key: "← / →", action: "Parçayı Sağa / Sola Kaydır" },
-      { key: "↑", action: "Saat Yönünde Döndür" },
-      { key: "↓", action: "Hızlı İndir (Yumuşak Düşüş)" },
-      { key: "SPACE", action: "Anında İndir (Sert Düşüş)" },
-      { key: "P", action: "Oyunu Duraklat / Devam Ettir" },
       { key: "ENTER", action: "Oyunu Başlat" }
     ]
   },
