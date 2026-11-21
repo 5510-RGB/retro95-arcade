@@ -1,0 +1,826 @@
+/* ==========================================================================
+   RETRO95 OYUN ARŞİVİ - WINDOWS 95 / 90'LAR KLASİK WEB TASARIMI
+   ========================================================================== */
+
+:root {
+  --win-bg: #c0c0c0;
+  --win-bg-light: #dfdfdf;
+  --win-white: #ffffff;
+  --win-dark: #808080;
+  --win-black: #000000;
+  --win-blue: #000080;
+  --win-blue-light: #1084d0;
+  --desktop-teal: #008080;
+  --term-green: #00ff00;
+  --win-yellow: #ffffcc;
+  --font-system: "Tahoma", "MS Sans Serif", "Geneva", sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--desktop-teal);
+  /* Klasik 90'lar dithered masaüstü deseni hissi */
+  background-image: radial-gradient(rgba(0, 0, 0, 0.12) 1px, transparent 0);
+  background-size: 4px 4px;
+  font-family: var(--font-system);
+  font-size: 13px;
+  color: var(--win-black);
+  min-height: 100vh;
+  padding-bottom: 42px; /* Taskbar alanı */
+  overflow-x: hidden;
+}
+
+/* Windows 95 3D Çerçeve Yardımcıları */
+.win-outset {
+  background-color: var(--win-bg);
+  border-top: 2px solid var(--win-white);
+  border-left: 2px solid var(--win-white);
+  border-right: 2px solid var(--win-black);
+  border-bottom: 2px solid var(--win-black);
+  box-shadow: inset 1px 1px 0px var(--win-bg-light), inset -1px -1px 0px var(--win-dark);
+}
+
+.win-inset {
+  background-color: var(--win-white);
+  border-top: 2px solid var(--win-dark);
+  border-left: 2px solid var(--win-dark);
+  border-right: 2px solid var(--win-white);
+  border-bottom: 2px solid var(--win-white);
+  box-shadow: inset 1px 1px 0px var(--win-black), inset -1px -1px 0px var(--win-bg-light);
+}
+
+.win-panel {
+  background-color: var(--win-bg);
+  border-top: 1px solid var(--win-dark);
+  border-left: 1px solid var(--win-dark);
+  border-right: 1px solid var(--win-white);
+  border-bottom: 1px solid var(--win-white);
+}
+
+/* Butonlar */
+.win-btn {
+  background-color: var(--win-bg);
+  border-top: 2px solid var(--win-white);
+  border-left: 2px solid var(--win-white);
+  border-right: 2px solid var(--win-black);
+  border-bottom: 2px solid var(--win-black);
+  box-shadow: inset 1px 1px 0px var(--win-bg-light), inset -1px -1px 0px var(--win-dark);
+  font-family: var(--font-system);
+  font-size: 12px;
+  color: var(--win-black);
+  padding: 4px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  user-select: none;
+  text-decoration: none;
+}
+
+.win-btn:active,
+.win-btn.active {
+  border-top: 2px solid var(--win-black);
+  border-left: 2px solid var(--win-black);
+  border-right: 2px solid var(--win-white);
+  border-bottom: 2px solid var(--win-white);
+  box-shadow: inset 1px 1px 0px var(--win-dark);
+  padding-top: 5px;
+  padding-left: 11px;
+  padding-bottom: 3px;
+  padding-right: 9px;
+}
+
+.win-btn.active {
+  background-image: repeating-conic-gradient(var(--win-bg) 0% 25%, var(--win-white) 0% 50%);
+  background-size: 2px 2px;
+  font-weight: bold;
+}
+
+.win-btn-primary {
+  font-weight: bold;
+  outline: 1px solid var(--win-black);
+}
+
+/* Masaüstü Kısayol İkonları + Ana Pencere Düzeni */
+.desktop-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.desktop-icons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  padding-top: 6px;
+}
+
+.desktop-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 82px;
+  text-align: center;
+  color: var(--win-white);
+  cursor: pointer;
+  padding: 4px;
+  border: 1px dotted transparent;
+  user-select: none;
+}
+
+.desktop-icon:hover .desktop-icon-label {
+  background-color: var(--win-blue);
+  outline: 1px dotted #ffff00;
+}
+
+.desktop-icon-graphic {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 5px;
+  filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.45));
+}
+
+.desktop-icon-label {
+  font-size: 11px;
+  line-height: 1.25;
+  padding: 1px 3px;
+  text-shadow: 1px 1px 1px var(--win-black);
+}
+
+/* Ana Uygulama Penceresi */
+.main-window {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.title-bar {
+  background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light));
+  color: var(--win-white);
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  user-select: none;
+}
+
+.title-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.title-bar-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.title-btn {
+  width: 18px;
+  height: 16px;
+  padding: 0;
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* Menü Çubuğu */
+.menu-bar {
+  display: flex;
+  gap: 14px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--win-dark);
+  font-size: 12px;
+  background-color: var(--win-bg);
+}
+
+.menu-item {
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.menu-item:hover {
+  background-color: var(--win-blue);
+  color: var(--win-white);
+}
+
+.menu-item u {
+  text-decoration: underline;
+}
+
+/* 90'lar Retro Kayan Yazı / Haber Bandı */
+.retro-ticker {
+  background-color: var(--win-black);
+  color: var(--term-green);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 5px 10px;
+  margin: 6px 8px 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ticker-badge {
+  background-color: #004400;
+  color: #55ff55;
+  border: 1px solid var(--term-green);
+  padding: 1px 6px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.ticker-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+/* Adres ve Arama Araç Çubuğu */
+.toolbar {
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--win-dark);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.search-label {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.win-input {
+  width: 100%;
+  padding: 5px 8px;
+  font-family: var(--font-system);
+  font-size: 12px;
+  border: none;
+  outline: none;
+}
+
+.win-select {
+  padding: 4px 6px;
+  font-family: var(--font-system);
+  font-size: 12px;
+  background-color: var(--win-white);
+  color: var(--win-black);
+}
+
+/* İçerik Gövdesi: Sol Kategori Ağacı + Sağ Oyun Vitrini */
+.explorer-body {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 10px;
+  padding: 8px;
+  min-height: 540px;
+}
+
+/* Sol Panel (Klasör Ağacı ve İstatistikler) */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tree-box {
+  padding: 8px;
+  background-color: var(--win-white);
+  flex: 1;
+}
+
+.tree-header {
+  font-weight: bold;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px dotted var(--win-dark);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tree-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tree-item {
+  padding: 4px 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  border: 1px dotted transparent;
+}
+
+.tree-item:hover {
+  background-color: #eef4ff;
+  border-color: var(--win-blue);
+}
+
+.tree-item.selected {
+  background-color: var(--win-blue);
+  color: var(--win-white);
+  font-weight: bold;
+}
+
+.tree-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.system-stats-box {
+  padding: 8px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dotted var(--win-dark);
+  padding-bottom: 3px;
+}
+
+/* Sağ Panel: Oyun Kartları Vitrini */
+.catalog-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+}
+
+.decade-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.games-grid-container {
+  padding: 12px;
+  min-height: 450px;
+  background-color: var(--win-white);
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+  gap: 14px;
+}
+
+/* Oyun Kartı (Windows 95 Program Kutusu) */
+.game-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.08s ease;
+}
+
+.game-card-header {
+  background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light));
+  color: var(--win-white);
+  padding: 4px 7px;
+  font-weight: bold;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fav-star-btn {
+  background: var(--win-bg);
+  border-top: 1px solid var(--win-white);
+  border-left: 1px solid var(--win-white);
+  border-right: 1px solid var(--win-black);
+  border-bottom: 1px solid var(--win-black);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 1px 4px;
+  color: #444;
+}
+
+.fav-star-btn.is-fav {
+  color: #d48800;
+  background-color: #fff8dc;
+}
+
+.game-card-Preview {
+  margin: 8px;
+  height: 125px;
+  background-color: #050a05;
+  color: var(--term-green);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-mono);
+}
+
+.game-card-Preview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 3px;
+  pointer-events: none;
+}
+
+.preview-icon {
+  font-size: 40px;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 8px rgba(51, 255, 51, 0.4));
+}
+
+.preview-meta {
+  font-size: 11px;
+  color: #88ff88;
+  text-align: center;
+  padding: 0 6px;
+}
+
+.preview-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--term-green);
+  color: var(--term-green);
+  font-size: 10px;
+  padding: 1px 5px;
+}
+
+.preview-score-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: #000080;
+  border: 1px solid #ffffff;
+  color: #ffff00;
+  font-size: 10px;
+  padding: 1px 5px;
+  font-weight: bold;
+}
+
+.game-card-body {
+  padding: 0 10px 8px 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.game-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.win-tag {
+  background-color: var(--win-bg-light);
+  border: 1px solid var(--win-dark);
+  padding: 1px 5px;
+  font-size: 11px;
+}
+
+.game-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #222;
+}
+
+.game-card-actions {
+  padding: 8px 10px;
+  border-top: 1px solid var(--win-dark);
+  display: flex;
+  gap: 6px;
+}
+
+.game-card-actions .win-btn {
+  flex: 1;
+}
+
+/* Yeni Oyun Ekleme Kılavuz Kartı */
+.add-game-card {
+  border: 2px dashed var(--win-dark);
+  background-color: #f7f7f7;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  min-height: 270px;
+}
+
+/* Pencere Alt Durum Çubuğu */
+.status-bar {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.status-cell {
+  padding: 2px 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   MODAL PENCERELER (Oyun Kabini, Bilgi Kartı, Oyun Ekleme Rehberi)
+   ========================================================================== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.arcade-window {
+  width: 100%;
+  max-width: 1060px;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.arcade-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  gap: 8px;
+  border-bottom: 1px solid var(--win-dark);
+}
+
+.arcade-content {
+  display: grid;
+  grid-template-columns: 1fr 270px;
+  gap: 8px;
+  padding: 8px;
+  overflow-y: auto;
+  max-height: calc(94vh - 85px);
+}
+
+.iframe-cabinet {
+  background-color: #000;
+  min-height: 650px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.iframe-cabinet iframe {
+  width: 100%;
+  height: 660px;
+  border: none;
+  display: block;
+}
+
+.arcade-side-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-group {
+  padding: 8px;
+}
+
+.info-group-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--win-dark);
+  color: var(--win-blue);
+}
+
+.controls-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.controls-table td {
+  padding: 4px;
+  border-bottom: 1px dotted var(--win-dark);
+}
+
+.key-badge {
+  font-family: var(--font-mono);
+  font-weight: bold;
+  background-color: var(--win-bg);
+  border: 1px solid var(--win-black);
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+
+/* Diyalog Kutusu (Rehber ve Hikaye Modalları) */
+.dialog-window {
+  width: 100%;
+  max-width: 620px;
+}
+
+.dialog-body {
+  padding: 14px;
+  max-height: 75vh;
+  overflow-y: auto;
+  line-height: 1.5;
+}
+
+.code-block {
+  background-color: var(--win-black);
+  color: var(--term-green);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 10px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+/* ==========================================================================
+   WINDOWS 95 GÖREV ÇUBUĞU (TASKBAR)
+   ========================================================================== */
+
+.taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 34px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px;
+  gap: 6px;
+}
+
+.taskbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.start-btn {
+  font-weight: bold;
+  font-size: 13px;
+  padding: 3px 8px;
+}
+
+.taskbar-divider {
+  width: 2px;
+  height: 22px;
+  border-left: 1px solid var(--win-dark);
+  border-right: 1px solid var(--win-white);
+}
+
+.taskbar-tab {
+  min-width: 145px;
+  max-width: 200px;
+  justify-content: flex-start;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+
+.system-tray {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: var(--font-system);
+  background-color: var(--win-bg);
+}
+
+/* Başlat Menüsü */
+.start-menu {
+  position: fixed;
+  bottom: 34px;
+  left: 4px;
+  width: 230px;
+  z-index: 110;
+  display: flex;
+}
+
+.start-menu-banner {
+  background: linear-gradient(180deg, var(--win-blue), #000040);
+  color: var(--win-white);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  padding: 10px 5px;
+  font-weight: bold;
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+.start-menu-list {
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.start-menu-item {
+  padding: 7px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.start-menu-item:hover {
+  background-color: var(--win-blue);
+  color: var(--win-white);
+}
+
+.start-menu-sep {
+  border-top: 1px solid var(--win-dark);
+  border-bottom: 1px solid var(--win-white);
+  margin: 4px 0;
+}
+
+/* Mobil ve Küçük Ekran Uyumu */
+@media (max-width: 900px) {
+  .desktop-container {
+    grid-template-columns: 1fr;
+  }
+  .desktop-icons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .explorer-body {
+    grid-template-columns: 1fr;
+  }
+  .arcade-content {
+    grid-template-columns: 1fr;
+  }
+}

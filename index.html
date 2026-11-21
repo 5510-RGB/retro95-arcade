@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RETRO95 // Klasik Oyun Arşivi & Arcade Salonu</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- MASAÜSTÜ ALANI: SOLDA KISAYOL İKONLARI + SAĞDA ANA GEZGİN PENCERESİ -->
+  <div class="desktop-container">
+
+    <!-- Windows 95 Masaüstü İkonları -->
+    <aside class="desktop-icons">
+      <div class="desktop-icon" id="desktop-all-games">
+        <div class="desktop-icon-graphic">🖥️</div>
+        <div class="desktop-icon-label">Oyun Arşivi (C:)</div>
+      </div>
+
+      <div class="desktop-icon" id="desktop-favorites">
+        <div class="desktop-icon-graphic">⭐</div>
+        <div class="desktop-icon-label">Favori Oyunlarım</div>
+      </div>
+
+      <div class="desktop-icon" id="desktop-add-guide">
+        <div class="desktop-icon-graphic">💾</div>
+        <div class="desktop-icon-label">Yeni Oyun Ekle.txt</div>
+      </div>
+    </aside>
+
+    <!-- ANA WINDOWS 95 UYGULAMA PENCERESİ -->
+    <main class="main-window win-outset">
+      <!-- Başlık Çubuğu -->
+      <div class="title-bar">
+        <div class="title-bar-left">
+          <span>🕹️</span>
+          <span>Retro95_Oyun_Arsivi.exe - Klasik Oyunlar Gezgini</span>
+        </div>
+        <div class="title-bar-controls">
+          <button class="win-btn title-btn" title="Küçült">_</button>
+          <button class="win-btn title-btn" title="Tam Ekran">□</button>
+          <button class="win-btn title-btn" title="Kapat">X</button>
+        </div>
+      </div>
+
+      <!-- Üst Menü Çubuğu -->
+      <div class="menu-bar">
+        <span class="menu-item" id="menu-add-game"><u>D</u>osya: Yeni Oyun Ekle</span>
+        <span class="menu-item" id="menu-reset-scores"><u>S</u>korlar: Rekorları Sıfırla</span>
+      </div>
+
+      <!-- 90'lar Retro Terminal Duyuru Bandı -->
+      <div class="retro-ticker win-inset">
+        <span class="ticker-badge">RETRO95 PORTAL</span>
+        <span class="ticker-text">
+          Hoş geldiniz! İstediğiniz klasik oyunu seçip sayfa içi Arcade Kabininde hemen oynayabilirsiniz. Yeni oyun eklemek için "Nasıl Oyun Eklenir?" rehberine göz atın.
+        </span>
+      </div>
+
+      <!-- Arama ve Sıralama Araç Çubuğu -->
+      <div class="toolbar">
+        <div class="search-box">
+          <label for="search-input" class="search-label">🔍 Oyun Ara:</label>
+          <div class="win-inset" style="flex: 1;">
+            <input
+              type="text"
+              id="search-input"
+              class="win-input"
+              placeholder="Oyun adı, yapımcı, yıl (örn: Tetris, 1984, Pajitnov)..."
+            />
+          </div>
+          <button class="win-btn" id="clear-search-btn">Temizle</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <label for="sort-select" style="font-weight: bold;">Sırala:</label>
+          <select id="sort-select" class="win-select win-inset">
+            <option value="year-asc">Çıkış Yılı (Eskiden Yeniye)</option>
+            <option value="year-desc">Çıkış Yılı (Yeniden Eskiye)</option>
+            <option value="title-asc">Oyun Adı (A - Z)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Gezgin Gövdesi: Sol Kategori Ağacı + Sağ Oyun Kartları -->
+      <div class="explorer-body">
+        <!-- Sol Klasör ve İstatistik Paneli -->
+        <aside class="sidebar">
+          <div class="tree-box win-inset">
+            <div class="tree-header">📂 KATEGORİLER</div>
+            <ul class="tree-list" id="category-tree"></ul>
+          </div>
+
+          <div class="system-stats-box win-panel">
+            <div style="font-weight: bold; color: var(--win-blue); margin-bottom: 2px;">
+              📊 ARŞİV DURUMU
+            </div>
+            <div class="stat-row">
+              <span>Yüklü Oyun:</span>
+              <strong id="stat-total-games">0</strong>
+            </div>
+            <div class="stat-row">
+              <span>Favoriler:</span>
+              <strong id="stat-fav-games">0</strong>
+            </div>
+            <div class="stat-row">
+              <span>En Yüksek Rekor:</span>
+              <strong id="stat-top-score">0</strong>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Sağ Oyun Vitrini -->
+        <section class="catalog-area">
+          <!-- Yıl / Dönem Filtre Çubuğu -->
+          <div class="filter-pills win-panel">
+            <div class="decade-buttons">
+              <strong style="align-self: center; margin-right: 4px;">Dönem:</strong>
+              <button class="win-btn active" data-decade="ALL">Tümü</button>
+              <button class="win-btn" data-decade="70s">70'ler</button>
+              <button class="win-btn" data-decade="80s">80'ler</button>
+              <button class="win-btn" data-decade="90s">90'lar</button>
+              <button class="win-btn" data-decade="00s">2000'ler</button>
+            </div>
+          </div>
+
+          <!-- Oyun Kartları Izgarası -->
+          <div class="games-grid-container win-inset">
+            <div class="games-grid" id="games-grid"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Alt Durum Çubuğu -->
+      <div class="status-bar">
+        <div class="status-cell win-panel" id="status-main-text">Hazır</div>
+        <div class="status-cell win-panel" id="status-filter-text">Filtre: Tümü</div>
+        <div class="status-cell win-panel">💾 LocalStorage: Aktif</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       1. SAYFA İÇİ ARCADE KABİNİ MODAL PENCERESİ (OYUN OYNAMA EKRANI)
+       ======================================================================== -->
+  <div id="arcade-modal" class="modal-backdrop hidden">
+    <div class="arcade-window win-outset">
+      <div class="title-bar">
+        <div class="title-bar-left">
+          <span id="arcade-window-title">🕹️ Oyun Kabini</span>
+        </div>
+        <div class="title-bar-controls">
+          <button class="win-btn title-btn" id="close-arcade-btn" title="Kapat">X</button>
+        </div>
+      </div>
+
+      <div class="arcade-toolbar">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button class="win-btn" id="restart-arcade-btn">🔄 Yeniden Başlat</button>
+          <button class="win-btn" id="fullscreen-arcade-btn">⛶ Tam Ekran Kabin</button>
+          <button class="win-btn" id="manual-score-btn">🏆 Manuel Skor Kaydet</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="win-panel" style="padding: 4px 10px; font-weight: bold;">
+            🏆 EN YÜKSEK SKORUNUZ: <span id="arcade-high-score" style="color: var(--win-blue);">0</span>
+          </div>
+          <button class="win-btn" id="exit-arcade-btn">❌ Kabinden Çık</button>
+        </div>
+      </div>
+
+      <div class="arcade-content">
+        <!-- Oyun Iframe Kabini -->
+        <div class="iframe-cabinet win-inset" id="iframe-cabinet-box">
+          <iframe id="arcade-iframe" src="about:blank" allow="autoplay; fullscreen"></iframe>
+        </div>
+
+        <!-- Sağ Bilgi ve Kontrol Rehberi -->
+        <aside class="arcade-side-info">
+          <div class="info-group win-panel">
+            <div class="info-group-title">⌨️ KONTROL TUŞLARI</div>
+            <table class="controls-table">
+              <tbody id="arcade-controls"></tbody>
+            </table>
+          </div>
+
+          <div class="info-group win-panel">
+            <div class="info-group-title">📋 KÜNYE</div>
+            <div id="arcade-meta-list" style="font-size: 12px; line-height: 1.6;"></div>
+          </div>
+
+          <div class="info-group win-panel" style="flex: 1;">
+            <div class="info-group-title">📜 HİKAYESİ</div>
+            <p id="arcade-story" style="margin: 0; font-size: 12px; line-height: 1.5;"></p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       2. OYUN BİLGİ KARTI MODAL PENCERESİ
+       ======================================================================== -->
+  <div id="info-modal" class="modal-backdrop hidden">
+    <div class="dialog-window win-outset">
+      <div class="title-bar">
+        <div class="title-bar-left">
+          <span id="info-modal-title">ℹ Oyun Bilgi Kartı</span>
+        </div>
+        <div class="title-bar-controls">
+          <button class="win-btn title-btn" id="close-info-modal-x">X</button>
+        </div>
+      </div>
+      <div class="dialog-body" id="info-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       3. YENİ OYUN EKLEME KILAVUZU MODAL PENCERESİ
+       ======================================================================== -->
+  <div id="guide-modal" class="modal-backdrop hidden">
+    <div class="dialog-window win-outset">
+      <div class="title-bar">
+        <div class="title-bar-left">
+          <span>💾 Yeni Oyun Ekleme Kılavuzu (Readme.txt)</span>
+        </div>
+        <div class="title-bar-controls">
+          <button class="win-btn title-btn" id="close-guide-modal-x">X</button>
+        </div>
+      </div>
+      <div class="dialog-body">
+        <h3 style="margin-top: 0;">Siteye Kendi Eski Oyunlarınızı Nasıl Eklersiniz?</h3>
+        <p>
+          Bu site, kod karmaşasına girmeden aklınıza gelen her yeni oyunu saniyeler içinde ekleyebilmeniz için modüler olarak tasarlandı:
+        </p>
+        <ol style="padding-left: 20px;">
+          <li>
+            <strong>Oyun Klasörünü Oluşturun:</strong><br />
+            <code>games/</code> klasörü içine yeni oyununuz için bir klasör açın ve oyunun HTML dosyasını içine koyun.<br />
+            Örnek: <code>games/snake/index.html</code>
+          </li>
+          <li style="margin-top: 8px;">
+            <strong>Kataloğa Kaydedin:</strong><br />
+            Ana klasördeki <code>games-data.js</code> dosyasını açın ve <code>window.GAMES_CATALOG</code> listesine aşağıdaki gibi yeni bir blok ekleyin:
+          </li>
+        </ol>
+
+        <pre class="code-block win-inset">{
+  id: "snake-1997",
+  title: "SNAKE (1997)",
+  year: 1997,
+  decade: "90s",
+  category: "Arcade",
+  developer: "Taneli Armanto",
+  platform: "Nokia 6110",
+  path: "games/snake/index.html",
+  icon: "🐍",
+  shortDesc: "Nokia telefonların unutulmaz piksel yılan oyunu.",
+  story: "1997 yılında Nokia 6110 ile hayatımıza giren efsane oyun...",
+  controls: [
+    { key: "Ok Tuşları", action: "Yılanı Yönlendir" }
+  ]
+}</pre>
+
+        <p style="font-size: 12px;">
+          <strong>İpucu (Otomatik Yüksek Skor):</strong> Oyununuz bittiğinde ana sitedeki yüksek skor tablosunu otomatik güncellemek isterseniz oyun kodunuzun içine şu satırı eklemeniz yeterlidir:<br />
+          <code>window.parent.postMessage({ type: "RETRO_HIGH_SCORE", score: oyuncuSkoru }, "*");</code>
+        </p>
+
+        <div style="text-align: right; margin-top: 12px;">
+          <button class="win-btn win-btn-primary" id="close-guide-modal-btn">Anladım, Kapat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       WINDOWS 95 BAŞLAT MENÜSÜ VE GÖREV ÇUBUĞU (TASKBAR)
+       ======================================================================== -->
+  <div id="start-menu" class="start-menu win-outset hidden">
+    <div class="start-menu-banner">RETRO 95</div>
+    <ul class="start-menu-list">
+      <li class="start-menu-item" id="start-menu-all">📁 Tüm Oyunları Göster</li>
+      <li class="start-menu-item" id="start-menu-favs">⭐ Favori Oyunlarım</li>
+      <li class="start-menu-sep"></li>
+      <li class="start-menu-item" id="start-menu-guide">💾 Nasıl Oyun Eklenir?</li>
+    </ul>
+  </div>
+
+  <footer class="taskbar win-outset">
+    <div class="taskbar-left">
+      <button class="win-btn start-btn" id="start-btn">🪟 Başlat</button>
+      <div class="taskbar-divider"></div>
+      <button class="win-btn taskbar-tab active">🕹️ Retro95 Oyun Arşivi</button>
+      <button class="win-btn taskbar-tab hidden" id="taskbar-active-game">🧱 Oyun</button>
+    </div>
+
+    <div class="system-tray win-inset">
+      <span>🔊</span>
+      <span id="tray-clock">12:00</span>
+    </div>
+  </footer>
+
+  <script src="games-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
