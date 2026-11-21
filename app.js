@@ -64,11 +64,10 @@
   const arcadeHighScoreEl = document.getElementById("arcade-high-score");
   const taskbarActiveGameBtn = document.getElementById("taskbar-active-game");
 
-  // Bilgi Kartı ve Rehber Modal Elemanları
+  // Bilgi Kartı Modal Elemanları
   const infoModalEl = document.getElementById("info-modal");
   const infoModalTitleEl = document.getElementById("info-modal-title");
   const infoModalBodyEl = document.getElementById("info-modal-body");
-  const guideModalEl = document.getElementById("guide-modal");
 
   // Başlangıç
   function init() {
@@ -161,6 +160,15 @@
     statusMainTextEl.textContent = `${filtered.length} oyun listeleniyor (Toplam Arşiv: ${(window.GAMES_CATALOG || []).length})`;
     statusFilterTextEl.textContent = `Kategori: ${state.selectedCategory === "ALL" ? "Tümü" : state.selectedCategory === "FAVORITES" ? "Favoriler" : state.selectedCategory} | Dönem: ${state.selectedDecade === "ALL" ? "Tümü" : state.selectedDecade}`;
 
+    if (filtered.length === 0) {
+      gamesGridEl.innerHTML = `
+        <div class="win-panel" style="padding: 20px; text-align: center; grid-column: 1 / -1;">
+          <strong>Aradığınız kriterlere uygun oyun bulunamadı.</strong>
+        </div>
+      `;
+      return;
+    }
+
     const cardsHtml = filtered
       .map(game => {
         const isFav = state.favorites.includes(game.id);
@@ -203,19 +211,7 @@
       })
       .join("");
 
-    // Her zaman en sonda "Yeni Oyun Ekle" rehber kartını göster
-    const addCardHtml = `
-      <article class="add-game-card">
-        <div style="font-size: 34px;">💾</div>
-        <strong>Yeni Eski Oyun Ekle</strong>
-        <p style="margin: 0; font-size: 12px; color: #444;">
-          Aklınıza gelen yeni bir klasik oyunu <code>games/</code> klasörüne atıp <code>games-data.js</code> dosyasına ekleyerek arşivi büyütebilirsiniz.
-        </p>
-        <button class="win-btn" id="open-guide-card-btn">📖 Nasıl Oyun Eklenir?</button>
-      </article>
-    `;
-
-    gamesGridEl.innerHTML = cardsHtml + addCardHtml;
+    gamesGridEl.innerHTML = cardsHtml;
 
     // Kart Buton Dinleyicileri
     gamesGridEl.querySelectorAll("[data-play-id]").forEach(btn => {
@@ -229,11 +225,6 @@
     gamesGridEl.querySelectorAll("[data-fav-id]").forEach(btn => {
       btn.addEventListener("click", () => toggleFavorite(btn.getAttribute("data-fav-id")));
     });
-
-    const guideBtn = document.getElementById("open-guide-card-btn");
-    if (guideBtn) {
-      guideBtn.addEventListener("click", () => guideModalEl.classList.remove("hidden"));
-    }
   }
 
   // Favori Ekle / Çıkar
@@ -418,6 +409,18 @@
       });
     });
 
+    // Sağ üst tam ekran butonu
+    const winFsBtn = document.getElementById("window-fullscreen-btn");
+    if (winFsBtn) {
+      winFsBtn.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.();
+        } else {
+          document.exitFullscreen?.();
+        }
+      });
+    }
+
     // Arcade Kabini Kontrolleri
     document.getElementById("close-arcade-btn").addEventListener("click", closeGameCabinet);
     document.getElementById("exit-arcade-btn").addEventListener("click", closeGameCabinet);
@@ -459,37 +462,22 @@
       }
     });
 
-    // Bilgi ve Rehber Modallarını Kapatma
+    // Bilgi Modalını Kapatma
     document.getElementById("close-info-modal-x").addEventListener("click", () => {
       infoModalEl.classList.add("hidden");
     });
 
-    document.getElementById("close-guide-modal-x").addEventListener("click", () => {
-      guideModalEl.classList.add("hidden");
-    });
-    document.getElementById("close-guide-modal-btn").addEventListener("click", () => {
-      guideModalEl.classList.add("hidden");
-    });
-
-    // Masaüstü Kısayolları ve Menü Öğeleri
-    document.getElementById("desktop-all-games").addEventListener("click", () => {
+    // Üst Menü Öğeleri
+    document.getElementById("menu-all-games").addEventListener("click", () => {
       state.selectedCategory = "ALL";
       renderCategoryTree();
       renderGamesGrid();
     });
 
-    document.getElementById("desktop-favorites").addEventListener("click", () => {
+    document.getElementById("menu-fav-games").addEventListener("click", () => {
       state.selectedCategory = "FAVORITES";
       renderCategoryTree();
       renderGamesGrid();
-    });
-
-    document.getElementById("desktop-add-guide").addEventListener("click", () => {
-      guideModalEl.classList.remove("hidden");
-    });
-
-    document.getElementById("menu-add-game").addEventListener("click", () => {
-      guideModalEl.classList.remove("hidden");
     });
 
     document.getElementById("menu-reset-scores").addEventListener("click", () => {
@@ -526,10 +514,6 @@
       state.selectedCategory = "FAVORITES";
       renderCategoryTree();
       renderGamesGrid();
-    });
-
-    document.getElementById("start-menu-guide").addEventListener("click", () => {
-      guideModalEl.classList.remove("hidden");
     });
   }
 

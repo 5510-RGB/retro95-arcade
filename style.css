@@ -1,5 +1,5 @@
 /* ==========================================================================
-   RETRO95 OYUN ARŞİVİ - WINDOWS 95 / 90'LAR KLASİK WEB TASARIMI
+   RETRO95 OYUN ARŞİVİ - WINDOWS 95 / 90'LAR KLASİK WEB TASARIMI (TAM EKRAN)
    ========================================================================== */
 
 :root {
@@ -21,19 +21,17 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
   padding: 0;
+  height: 100%;
+  width: 100%;
   background-color: var(--desktop-teal);
-  /* Klasik 90'lar dithered masaüstü deseni hissi */
-  background-image: radial-gradient(rgba(0, 0, 0, 0.12) 1px, transparent 0);
-  background-size: 4px 4px;
   font-family: var(--font-system);
   font-size: 13px;
   color: var(--win-black);
-  min-height: 100vh;
-  padding-bottom: 42px; /* Taskbar alanı */
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* Windows 95 3D Çerçeve Yardımcıları */
@@ -108,60 +106,19 @@ body {
   outline: 1px solid var(--win-black);
 }
 
-/* Masaüstü Kısayol İkonları + Ana Pencere Düzeni */
+/* Tam Ekran Kaplayan Ana Pencere Düzeni */
 .desktop-container {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 14px;
-  display: grid;
-  grid-template-columns: 88px 1fr;
-  gap: 16px;
-  align-items: start;
-}
-
-.desktop-icons {
+  width: 100vw;
+  height: calc(100vh - 34px); /* Alt görev çubuğu hariç tam ekran */
+  margin: 0;
+  padding: 0;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center;
-  padding-top: 6px;
-}
-
-.desktop-icon {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 82px;
-  text-align: center;
-  color: var(--win-white);
-  cursor: pointer;
-  padding: 4px;
-  border: 1px dotted transparent;
-  user-select: none;
-}
-
-.desktop-icon:hover .desktop-icon-label {
-  background-color: var(--win-blue);
-  outline: 1px dotted #ffff00;
-}
-
-.desktop-icon-graphic {
-  font-size: 32px;
-  line-height: 1;
-  margin-bottom: 5px;
-  filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.45));
-}
-
-.desktop-icon-label {
-  font-size: 11px;
-  line-height: 1.25;
-  padding: 1px 3px;
-  text-shadow: 1px 1px 1px var(--win-black);
 }
 
 /* Ana Uygulama Penceresi */
 .main-window {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -169,7 +126,7 @@ body {
 .title-bar {
   background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light));
   color: var(--win-white);
-  padding: 4px 6px;
+  padding: 5px 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -191,10 +148,10 @@ body {
 }
 
 .title-btn {
-  width: 18px;
-  height: 16px;
+  width: 20px;
+  height: 18px;
   padding: 0;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: bold;
   line-height: 1;
 }
@@ -297,10 +254,12 @@ body {
 /* İçerik Gövdesi: Sol Kategori Ağacı + Sağ Oyun Vitrini */
 .explorer-body {
   display: grid;
-  grid-template-columns: 230px 1fr;
+  grid-template-columns: 240px 1fr;
   gap: 10px;
   padding: 8px;
-  min-height: 540px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Sol Panel (Klasör Ağacı ve İstatistikler) */
@@ -308,12 +267,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
 }
 
 .tree-box {
   padding: 8px;
   background-color: var(--win-white);
   flex: 1;
+  overflow-y: auto;
 }
 
 .tree-header {
@@ -336,7 +297,7 @@ body {
 }
 
 .tree-item {
-  padding: 4px 6px;
+  padding: 5px 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -382,6 +343,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
 }
 
 .filter-pills {
@@ -400,15 +362,16 @@ body {
 }
 
 .games-grid-container {
-  padding: 12px;
-  min-height: 450px;
+  padding: 14px;
+  flex: 1;
+  overflow-y: auto;
   background-color: var(--win-white);
 }
 
 .games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
 }
 
 /* Oyun Kartı (Windows 95 Program Kutusu) */
@@ -450,7 +413,7 @@ body {
 
 .game-card-Preview {
   margin: 8px;
-  height: 125px;
+  height: 135px;
   background-color: #050a05;
   color: var(--term-green);
   display: flex;
@@ -472,7 +435,7 @@ body {
 }
 
 .preview-icon {
-  font-size: 40px;
+  font-size: 42px;
   margin-bottom: 6px;
   filter: drop-shadow(0 0 8px rgba(51, 255, 51, 0.4));
 }
@@ -546,20 +509,6 @@ body {
   flex: 1;
 }
 
-/* Yeni Oyun Ekleme Kılavuz Kartı */
-.add-game-card {
-  border: 2px dashed var(--win-dark);
-  background-color: #f7f7f7;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 8px;
-  min-height: 270px;
-}
-
 /* Pencere Alt Durum Çubuğu */
 .status-bar {
   display: grid;
@@ -577,7 +526,7 @@ body {
 }
 
 /* ==========================================================================
-   MODAL PENCERELER (Oyun Kabini, Bilgi Kartı, Oyun Ekleme Rehberi)
+   MODAL PENCERELER (Oyun Kabini, Bilgi Kartı)
    ========================================================================== */
 
 .modal-backdrop {
@@ -597,7 +546,7 @@ body {
 
 .arcade-window {
   width: 100%;
-  max-width: 1060px;
+  max-width: 1100px;
   max-height: 94vh;
   display: flex;
   flex-direction: column;
@@ -676,7 +625,7 @@ body {
   white-space: nowrap;
 }
 
-/* Diyalog Kutusu (Rehber ve Hikaye Modalları) */
+/* Diyalog Kutusu (Bilgi Kartı Modalı) */
 .dialog-window {
   width: 100%;
   max-width: 620px;
@@ -687,16 +636,6 @@ body {
   max-height: 75vh;
   overflow-y: auto;
   line-height: 1.5;
-}
-
-.code-block {
-  background-color: var(--win-black);
-  color: var(--term-green);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 10px;
-  overflow-x: auto;
-  margin: 8px 0;
 }
 
 /* ==========================================================================
@@ -801,24 +740,19 @@ body {
   color: var(--win-white);
 }
 
-.start-menu-sep {
-  border-top: 1px solid var(--win-dark);
-  border-bottom: 1px solid var(--win-white);
-  margin: 4px 0;
-}
-
 /* Mobil ve Küçük Ekran Uyumu */
-@media (max-width: 900px) {
-  .desktop-container {
-    grid-template-columns: 1fr;
+@media (max-width: 850px) {
+  html,
+  body {
+    overflow: auto;
   }
-  .desktop-icons {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
+  .desktop-container {
+    height: auto;
+    min-height: calc(100vh - 34px);
   }
   .explorer-body {
     grid-template-columns: 1fr;
+    overflow: visible;
   }
   .arcade-content {
     grid-template-columns: 1fr;

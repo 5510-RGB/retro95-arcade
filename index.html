@@ -8,45 +8,24 @@
 </head>
 <body>
 
-  <!-- MASAÜSTÜ ALANI: SOLDA KISAYOL İKONLARI + SAĞDA ANA GEZGİN PENCERESİ -->
+  <!-- TAM EKRAN ANA WINDOWS 95 UYGULAMA PENCERESİ -->
   <div class="desktop-container">
-
-    <!-- Windows 95 Masaüstü İkonları -->
-    <aside class="desktop-icons">
-      <div class="desktop-icon" id="desktop-all-games">
-        <div class="desktop-icon-graphic">🖥️</div>
-        <div class="desktop-icon-label">Oyun Arşivi (C:)</div>
-      </div>
-
-      <div class="desktop-icon" id="desktop-favorites">
-        <div class="desktop-icon-graphic">⭐</div>
-        <div class="desktop-icon-label">Favori Oyunlarım</div>
-      </div>
-
-      <div class="desktop-icon" id="desktop-add-guide">
-        <div class="desktop-icon-graphic">💾</div>
-        <div class="desktop-icon-label">Yeni Oyun Ekle.txt</div>
-      </div>
-    </aside>
-
-    <!-- ANA WINDOWS 95 UYGULAMA PENCERESİ -->
     <main class="main-window win-outset">
       <!-- Başlık Çubuğu -->
       <div class="title-bar">
         <div class="title-bar-left">
           <span>🕹️</span>
-          <span>Retro95_Oyun_Arsivi.exe - Klasik Oyunlar Gezgini</span>
+          <span>Retro95 // Klasik Oyunlar Arşivi & Arcade Salonu</span>
         </div>
         <div class="title-bar-controls">
-          <button class="win-btn title-btn" title="Küçült">_</button>
-          <button class="win-btn title-btn" title="Tam Ekran">□</button>
-          <button class="win-btn title-btn" title="Kapat">X</button>
+          <button class="win-btn title-btn" id="window-fullscreen-btn" title="Tam Ekran Yap">□</button>
         </div>
       </div>
 
       <!-- Üst Menü Çubuğu -->
       <div class="menu-bar">
-        <span class="menu-item" id="menu-add-game"><u>D</u>osya: Yeni Oyun Ekle</span>
+        <span class="menu-item" id="menu-all-games"><u>A</u>rşiv: Tüm Oyunlar</span>
+        <span class="menu-item" id="menu-fav-games"><u>F</u>avorilerim</span>
         <span class="menu-item" id="menu-reset-scores"><u>S</u>korlar: Rekorları Sıfırla</span>
       </div>
 
@@ -54,7 +33,7 @@
       <div class="retro-ticker win-inset">
         <span class="ticker-badge">RETRO95 PORTAL</span>
         <span class="ticker-text">
-          Hoş geldiniz! İstediğiniz klasik oyunu seçip sayfa içi Arcade Kabininde hemen oynayabilirsiniz. Yeni oyun eklemek için "Nasıl Oyun Eklenir?" rehberine göz atın.
+          Hoş geldiniz! İstediğiniz klasik oyunu seçip sayfa içi Arcade Kabininde hemen oynayabilir, favorilerinize ekleyebilir ve kişisel rekorlarınızı kaydedebilirsiniz.
         </span>
       </div>
 
@@ -136,7 +115,7 @@
       <div class="status-bar">
         <div class="status-cell win-panel" id="status-main-text">Hazır</div>
         <div class="status-cell win-panel" id="status-filter-text">Filtre: Tümü</div>
-        <div class="status-cell win-panel">💾 LocalStorage: Aktif</div>
+        <div class="status-cell win-panel">💾 Yüksek Skor Kaydı: Aktif</div>
       </div>
     </main>
   </div>
@@ -216,65 +195,6 @@
   </div>
 
   <!-- ========================================================================
-       3. YENİ OYUN EKLEME KILAVUZU MODAL PENCERESİ
-       ======================================================================== -->
-  <div id="guide-modal" class="modal-backdrop hidden">
-    <div class="dialog-window win-outset">
-      <div class="title-bar">
-        <div class="title-bar-left">
-          <span>💾 Yeni Oyun Ekleme Kılavuzu (Readme.txt)</span>
-        </div>
-        <div class="title-bar-controls">
-          <button class="win-btn title-btn" id="close-guide-modal-x">X</button>
-        </div>
-      </div>
-      <div class="dialog-body">
-        <h3 style="margin-top: 0;">Siteye Kendi Eski Oyunlarınızı Nasıl Eklersiniz?</h3>
-        <p>
-          Bu site, kod karmaşasına girmeden aklınıza gelen her yeni oyunu saniyeler içinde ekleyebilmeniz için modüler olarak tasarlandı:
-        </p>
-        <ol style="padding-left: 20px;">
-          <li>
-            <strong>Oyun Klasörünü Oluşturun:</strong><br />
-            <code>games/</code> klasörü içine yeni oyununuz için bir klasör açın ve oyunun HTML dosyasını içine koyun.<br />
-            Örnek: <code>games/snake/index.html</code>
-          </li>
-          <li style="margin-top: 8px;">
-            <strong>Kataloğa Kaydedin:</strong><br />
-            Ana klasördeki <code>games-data.js</code> dosyasını açın ve <code>window.GAMES_CATALOG</code> listesine aşağıdaki gibi yeni bir blok ekleyin:
-          </li>
-        </ol>
-
-        <pre class="code-block win-inset">{
-  id: "snake-1997",
-  title: "SNAKE (1997)",
-  year: 1997,
-  decade: "90s",
-  category: "Arcade",
-  developer: "Taneli Armanto",
-  platform: "Nokia 6110",
-  path: "games/snake/index.html",
-  icon: "🐍",
-  shortDesc: "Nokia telefonların unutulmaz piksel yılan oyunu.",
-  story: "1997 yılında Nokia 6110 ile hayatımıza giren efsane oyun...",
-  controls: [
-    { key: "Ok Tuşları", action: "Yılanı Yönlendir" }
-  ]
-}</pre>
-
-        <p style="font-size: 12px;">
-          <strong>İpucu (Otomatik Yüksek Skor):</strong> Oyununuz bittiğinde ana sitedeki yüksek skor tablosunu otomatik güncellemek isterseniz oyun kodunuzun içine şu satırı eklemeniz yeterlidir:<br />
-          <code>window.parent.postMessage({ type: "RETRO_HIGH_SCORE", score: oyuncuSkoru }, "*");</code>
-        </p>
-
-        <div style="text-align: right; margin-top: 12px;">
-          <button class="win-btn win-btn-primary" id="close-guide-modal-btn">Anladım, Kapat</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================================================
        WINDOWS 95 BAŞLAT MENÜSÜ VE GÖREV ÇUBUĞU (TASKBAR)
        ======================================================================== -->
   <div id="start-menu" class="start-menu win-outset hidden">
@@ -282,8 +202,6 @@
     <ul class="start-menu-list">
       <li class="start-menu-item" id="start-menu-all">📁 Tüm Oyunları Göster</li>
       <li class="start-menu-item" id="start-menu-favs">⭐ Favori Oyunlarım</li>
-      <li class="start-menu-sep"></li>
-      <li class="start-menu-item" id="start-menu-guide">💾 Nasıl Oyun Eklenir?</li>
     </ul>
   </div>
 
