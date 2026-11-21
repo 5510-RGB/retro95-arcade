@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ARKANOID / BREAKOUT 1976 - Arcade Brick Breaker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #070913;
+      color: #00f0ff;
+      font-family: "Courier New", Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .cabinet {
+      border: 2px solid #00f0ff;
+      background: #000;
+      padding: 12px;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
+      position: relative;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    canvas {
+      display: block;
+      background: #03050a;
+      border: 1px solid #007a88;
+    }
+
+    .btn {
+      background: transparent;
+      color: #00f0ff;
+      border: 1px solid #00f0ff;
+      padding: 7px 14px;
+      font-family: inherit;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+
+    .btn:hover {
+      background: #00f0ff;
+      color: #000;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 12px;
+      background: rgba(0, 0, 0, 0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cabinet">
+    <div class="hud">
+      <span>SKOR: <span id="score">0000</span></span>
+      <span>SEVİYE: <span id="level">1</span></span>
+      <span>TOP: <span id="lives">●●●</span></span>
+    </div>
+
+    <canvas id="canvas" width="560" height="440"></canvas>
+
+    <div id="overlay" class="overlay">
+      <h2 id="ov-title" style="margin: 0 0 8px 0; letter-spacing: 3px;">BREAKOUT // ARKANOID</h2>
+      <p id="ov-desc" style="font-size: 0.85rem; max-width: 360px; line-height: 1.5;">
+        ← → Ok tuşları veya Fare ile raketi kaydır, tüm renkli tuğlaları kır!
+      </p>
+      <button class="btn" id="start-btn" style="font-weight: bold; margin-top: 10px;">
+        TOPU FIRLAT [ENTER]
+      </button>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.78rem;">
+      <span>← → veya Fare : Raket Kontrolü</span>
+      <button class="btn" id="sound-btn">SES: AÇIK</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    let score = 0;
+    let level = 1;
+    let lives = 3;
+    let isGameOver = true;
+    let soundEnabled = true;
+
+    const paddle = { w: 88, h: 12, x: 236, y: canvas.height - 26, speed: 7 };
+    const ball = { x: 280, y: 380, r: 6, vx: 4, vy: -4.5, speed: 5.5 };
+    let bricks = [];
+    const keys = {};
+
+    const BRICK_COLORS = ["#ff2a6d", "#ff8800", "#f5d300", "#05d550", "#00f0ff", "#b829ff"];
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function beep(freq, dur) {
+      if (!soundEnabled) return;
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.035, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur / 1000);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur / 1000);
+    }
+
+    function reportScore() {
+      document.getElementById("score").innerText = String(score).padStart(4, "0");
+      document.getElementById("level").innerText = level;
+      document.getElementById("lives").innerText = "●".repeat(Math.max(0, lives));
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "RETRO_HIGH_SCORE", gameId: "breakout-1976", score: score }, "*");
+      }
+    }
+
+    function buildBricks() {
+      bricks = [];
+      const rows = 6;
+      const cols = 9;
+      const bw = 54;
+      const bh = 18;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          bricks.push({
+            x: 18 + c * (bw + 5),
+            y: 45 + r * (bh + 6),
+            w: bw,
+            h: bh,
+            color: BRICK_COLORS[r % BRICK_COLORS.length],
+            points: (rows - r) * 15,
+            alive: true
+          });
+        }
+      }
+    }
+
+    function resetBall() {
+      paddle.x = canvas.width / 2 - paddle.w / 2;
+      ball.x = canvas.width / 2;
+      ball.y = paddle.y - 12;
+      ball.speed = 5.5 + (level - 1) * 0.6;
+      ball.vx = (Math.random() > 0.5 ? 1 : -1) * 3.8;
+      ball.vy = -ball.speed;
+    }
+
+    function startGame() {
+      score = 0;
+      level = 1;
+      lives = 3;
+      buildBricks();
+      resetBall();
+      reportScore();
+      isGameOver = false;
+      document.getElementById("overlay").classList.add("hidden");
+      requestAnimationFrame(loop);
+    }
+
+    function update() {
+      if (keys["ArrowLeft"] || keys["KeyA"]) paddle.x -= paddle.speed;
+      if (keys["ArrowRight"] || keys["KeyD"]) paddle.x += paddle.speed;
+      paddle.x = Math.max(8, Math.min(canvas.width - paddle.w - 8, paddle.x));
+
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+
+      if (ball.x - ball.r <= 0 || ball.x + ball.r >= canvas.width) {
+        ball.vx = -ball.vx;
+        beep(340, 40);
+      }
+      if (ball.y - ball.r <= 0) {
+        ball.vy = -ball.vy;
+        beep(380, 40);
+      }
+
+      // Raket çarpışması
+      if (
+        ball.vy > 0 &&
+        ball.y + ball.r >= paddle.y &&
+        ball.y - ball.r <= paddle.y + paddle.h &&
+        ball.x >= paddle.x &&
+        ball.x <= paddle.x + paddle.w
+      ) {
+        const hitOffset = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+        ball.vx = hitOffset * 5.8;
+        ball.vy = -Math.abs(ball.vy);
+        beep(520, 50);
+      }
+
+      // Tuğla çarpışmaları
+      for (let i = 0; i < bricks.length; i++) {
+        const b = bricks[i];
+        if (!b.alive) continue;
+        if (
+          ball.x + ball.r > b.x &&
+          ball.x - ball.r < b.x + b.w &&
+          ball.y + ball.r > b.y &&
+          ball.y - ball.r < b.y + b.h
+        ) {
+          b.alive = false;
+          ball.vy = -ball.vy;
+          score += b.points;
+          beep(740, 55);
+          reportScore();
+          break;
+        }
+      }
+
+      if (bricks.every(b => !b.alive)) {
+        level++;
+        score += 300;
+        beep(980, 180);
+        buildBricks();
+        resetBall();
+        reportScore();
+      }
+
+      // Topun düşmesi
+      if (ball.y - ball.r > canvas.height) {
+        lives--;
+        beep(150, 260);
+        reportScore();
+        if (lives <= 0) {
+          isGameOver = true;
+          document.getElementById("ov-title").innerText = "OYUN BİTTİ";
+          document.getElementById("ov-desc").innerText = `Toplam Skor: ${score} | Seviye: ${level}`;
+          document.getElementById("start-btn").innerText = "TEKRAR OYNA [ENTER]";
+          document.getElementById("overlay").classList.remove("hidden");
+        } else {
+          resetBall();
+        }
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = "#03050a";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Tuğlalar
+      bricks.forEach(b => {
+        if (!b.alive) return;
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.strokeStyle = "rgba(255,255,255,0.35)";
+        ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
+      });
+
+      // Raket
+      ctx.fillStyle = "#00f0ff";
+      ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+
+      // Top
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+    }
+
+    function loop() {
+      if (isGameOver) return;
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (["ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
+      keys[e.code] = true;
+      if (e.key === "Enter" && isGameOver) startGame();
+    });
+
+    document.addEventListener("keyup", e => {
+      keys[e.code] = false;
+    });
+
+    canvas.addEventListener("mousemove", e => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      paddle.x = Math.max(8, Math.min(canvas.width - paddle.w - 8, mx - paddle.w / 2));
+    });
+
+    document.getElementById("start-btn").addEventListener("click", startGame);
+
+    document.getElementById("sound-btn").addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById("sound-btn").innerText = soundEnabled ? "SES: AÇIK" : "SES: KAPALI";
+    });
+
+    buildBricks();
+    draw();
+  </script>
+</body>
+</html>

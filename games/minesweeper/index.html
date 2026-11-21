@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAYIN TARLASI 1990 - Windows Classic</title>
+  <style>
+    :root {
+      --win-bg: #c0c0c0;
+      --win-white: #ffffff;
+      --win-dark: #808080;
+      --win-black: #000000;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #004f4f;
+      font-family: "Tahoma", "MS Sans Serif", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .mine-window {
+      background: var(--win-bg);
+      border-top: 3px solid var(--win-white);
+      border-left: 3px solid var(--win-white);
+      border-right: 3px solid var(--win-black);
+      border-bottom: 3px solid var(--win-black);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    }
+
+    .mode-bar {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .win-btn {
+      background: var(--win-bg);
+      border-top: 2px solid var(--win-white);
+      border-left: 2px solid var(--win-white);
+      border-right: 2px solid var(--win-black);
+      border-bottom: 2px solid var(--win-black);
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .win-btn.active {
+      border-top: 2px solid var(--win-black);
+      border-left: 2px solid var(--win-black);
+      border-right: 2px solid var(--win-white);
+      border-bottom: 2px solid var(--win-white);
+      background: #b0b0b0;
+    }
+
+    .hud-panel {
+      border-top: 2px solid var(--win-dark);
+      border-left: 2px solid var(--win-dark);
+      border-right: 2px solid var(--win-white);
+      border-bottom: 2px solid var(--win-white);
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .led-box {
+      background: #000;
+      color: #ff0000;
+      font-family: "Courier New", monospace;
+      font-size: 24px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-top: 1px solid var(--win-dark);
+      border-left: 1px solid var(--win-dark);
+      border-right: 1px solid var(--win-white);
+      border-bottom: 1px solid var(--win-white);
+      letter-spacing: 2px;
+    }
+
+    .face-btn {
+      width: 36px;
+      height: 36px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .board-frame {
+      border-top: 3px solid var(--win-dark);
+      border-left: 3px solid var(--win-dark);
+      border-right: 3px solid var(--win-white);
+      border-bottom: 3px solid var(--win-white);
+      display: grid;
+      background: var(--win-dark);
+      gap: 0;
+    }
+
+    .cell {
+      width: 28px;
+      height: 28px;
+      background: var(--win-bg);
+      border-top: 2px solid var(--win-white);
+      border-left: 2px solid var(--win-white);
+      border-right: 2px solid var(--win-dark);
+      border-bottom: 2px solid var(--win-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .cell.revealed {
+      border: 1px solid #999;
+      background: #bdbdbd;
+      cursor: default;
+    }
+
+    .cell.exploded {
+      background: #ff0000;
+    }
+
+    .n1 { color: #0000ff; }
+    .n2 { color: #008000; }
+    .n3 { color: #ff0000; }
+    .n4 { color: #000080; }
+    .n5 { color: #800000; }
+    .n6 { color: #008080; }
+    .n7 { color: #000000; }
+    .n8 { color: #808080; }
+  </style>
+</head>
+<body>
+
+  <div class="mine-window">
+    <div class="mode-bar">
+      <button class="win-btn active" data-diff="easy">Başlangıç (9x9 - 10 Mayın)</button>
+      <button class="win-btn" data-diff="medium">Orta (14x14 - 28 Mayın)</button>
+    </div>
+
+    <div class="hud-panel">
+      <div class="led-box" id="mine-count">010</div>
+      <button class="win-btn face-btn" id="reset-btn" title="Yeni Oyun">🙂</button>
+      <div class="led-box" id="timer">000</div>
+    </div>
+
+    <div id="board" class="board-frame"></div>
+
+    <div style="font-size: 11px; text-align: center; color: #222;">
+      Sol Tık: Hücreyi Aç | Sağ Tık: Bayrak Koy (🚩) | Puan: <strong id="score-label">0</strong>
+    </div>
+  </div>
+
+  <script>
+    const CONFIGS = {
+      easy: { rows: 9, cols: 9, mines: 10, mult: 15 },
+      medium: { rows: 14, cols: 14, mines: 28, mult: 30 }
+    };
+
+    let currentDiff = "easy";
+    let rows = 9;
+    let cols = 9;
+    let totalMines = 10;
+    let board = [];
+    let flagsLeft = 10;
+    let revealedCount = 0;
+    let timerSec = 0;
+    let timerId = null;
+    let firstClick = true;
+    let isGameOver = false;
+    let score = 0;
+
+    const boardEl = document.getElementById("board");
+    const mineCountEl = document.getElementById("mine-count");
+    const timerEl = document.getElementById("timer");
+    const faceBtn = document.getElementById("reset-btn");
+    const scoreLabel = document.getElementById("score-label");
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, dur, type = "sine") {
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur / 1000);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur / 1000);
+    }
+
+    function reportScore() {
+      scoreLabel.innerText = score;
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "RETRO_HIGH_SCORE", gameId: "minesweeper-1990", score: score }, "*");
+      }
+    }
+
+    function initGame() {
+      const cfg = CONFIGS[currentDiff];
+      rows = cfg.rows;
+      cols = cfg.cols;
+      totalMines = cfg.mines;
+      flagsLeft = totalMines;
+      revealedCount = 0;
+      timerSec = 0;
+      score = 0;
+      firstClick = true;
+      isGameOver = false;
+      if (timerId) clearInterval(timerId);
+      timerId = null;
+
+      faceBtn.innerText = "🙂";
+      updateLEDs();
+      scoreLabel.innerText = "0";
+
+      board = [];
+      boardEl.style.gridTemplateColumns = `repeat(${cols}, 28px)`;
+      boardEl.innerHTML = "";
+
+      for (let r = 0; r < rows; r++) {
+        board[r] = [];
+        for (let c = 0; c < cols; c++) {
+          const el = document.createElement("div");
+          el.className = "cell";
+          el.addEventListener("click", () => handleLeftClick(r, c));
+          el.addEventListener("contextmenu", e => {
+            e.preventDefault();
+            handleRightClick(r, c);
+          });
+          boardEl.appendChild(el);
+          board[r][c] = {
+            mine: false,
+            revealed: false,
+            flagged: false,
+            count: 0,
+            el
+          };
+        }
+      }
+    }
+
+    function placeMines(safeR, safeC) {
+      let placed = 0;
+      while (placed < totalMines) {
+        const r = (Math.random() * rows) | 0;
+        const c = (Math.random() * cols) | 0;
+        if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
+        if (!board[r][c].mine) {
+          board[r][c].mine = true;
+          placed++;
+        }
+      }
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (board[r][c].mine) continue;
+          let cnt = 0;
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              const nr = r + dr;
+              const nc = c + dc;
+              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc].mine) {
+                cnt++;
+              }
+            }
+          }
+          board[r][c].count = cnt;
+        }
+      }
+    }
+
+    function handleLeftClick(r, c) {
+      if (isGameOver) return;
+      const cell = board[r][c];
+      if (cell.flagged || cell.revealed) return;
+
+      if (firstClick) {
+        firstClick = false;
+        placeMines(r, c);
+        timerId = setInterval(() => {
+          timerSec = Math.min(999, timerSec + 1);
+          updateLEDs();
+        }, 1000);
+      }
+
+      if (cell.mine) {
+        explode(r, c);
+        return;
+      }
+
+      revealCell(r, c);
+      playTone(620, 40);
+      checkWin();
+    }
+
+    function handleRightClick(r, c) {
+      if (isGameOver) return;
+      const cell = board[r][c];
+      if (cell.revealed) return;
+
+      cell.flagged = !cell.flagged;
+      cell.el.innerText = cell.flagged ? "🚩" : "";
+      flagsLeft += cell.flagged ? -1 : 1;
+      playTone(440, 35);
+      updateLEDs();
+    }
+
+    function revealCell(r, c) {
+      if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+      const cell = board[r][c];
+      if (cell.revealed || cell.flagged || cell.mine) return;
+
+      cell.revealed = true;
+      cell.el.classList.add("revealed");
+      revealedCount++;
+      score += CONFIGS[currentDiff].mult;
+      reportScore();
+
+      if (cell.count > 0) {
+        cell.el.innerText = cell.count;
+        cell.el.classList.add(`n${cell.count}`);
+      } else {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr !== 0 || dc !== 0) revealCell(r + dr, c + dc);
+          }
+        }
+      }
+    }
+
+    function explode(hitR, hitC) {
+      isGameOver = true;
+      if (timerId) clearInterval(timerId);
+      faceBtn.innerText = "😵";
+      playTone(120, 350, "sawtooth");
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = board[r][c];
+          if (cell.mine) {
+            cell.el.classList.add("revealed");
+            cell.el.innerText = "💣";
+          }
+        }
+      }
+      board[hitR][hitC].el.classList.add("exploded");
+    }
+
+    function checkWin() {
+      const safeCells = rows * cols - totalMines;
+      if (revealedCount === safeCells) {
+        isGameOver = true;
+        if (timerId) clearInterval(timerId);
+        faceBtn.innerText = "😎";
+        const timeBonus = Math.max(100, (300 - timerSec) * 5);
+        score += timeBonus;
+        reportScore();
+        playTone(880, 120);
+        setTimeout(() => playTone(1174, 220), 120);
+      }
+    }
+
+    function updateLEDs() {
+      const m = Math.max(0, flagsLeft);
+      mineCountEl.innerText = String(m).padStart(3, "0");
+      timerEl.innerText = String(timerSec).padStart(3, "0");
+    }
+
+    faceBtn.addEventListener("click", initGame);
+
+    document.querySelectorAll("[data-diff]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-diff]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentDiff = btn.getAttribute("data-diff");
+        initGame();
+      });
+    });
+
+    initGame();
+  </script>
+</body>
+</html>

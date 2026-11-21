@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPACE INVADERS 1978 - Taito Arcade</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #030308;
+      color: #33ff33;
+      font-family: "Courier New", Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .arcade-box {
+      border: 2px solid #33ff33;
+      background: #000;
+      padding: 12px;
+      box-shadow: 0 0 24px rgba(51, 255, 51, 0.2);
+      position: relative;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      border-bottom: 1px dashed #1f7a1f;
+      padding-bottom: 5px;
+    }
+
+    canvas {
+      display: block;
+      background: #000;
+      border: 1px solid #1f7a1f;
+    }
+
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 0.78rem;
+    }
+
+    .btn {
+      background: #000;
+      color: #33ff33;
+      border: 1px solid #33ff33;
+      padding: 6px 12px;
+      font-family: inherit;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .btn:hover {
+      background: #33ff33;
+      color: #000;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 12px;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="arcade-box">
+    <div class="hud">
+      <span>SKOR: <span id="score">0000</span></span>
+      <span>DALGA: <span id="wave">1</span></span>
+      <span>CAN: <span id="lives">♥♥♥</span></span>
+    </div>
+
+    <canvas id="screen" width="560" height="460"></canvas>
+
+    <div id="overlay" class="overlay">
+      <h2 id="ov-title" style="margin: 0 0 8px 0; letter-spacing: 3px;">SPACE INVADERS // 1978</h2>
+      <p id="ov-desc" style="font-size: 0.85rem; max-width: 360px; line-height: 1.5;">
+        ← → Tuşlarıyla hareket et, SPACE ile lazer ateşle! Siperlerin arkasına saklan.
+      </p>
+      <button class="btn" id="start-btn" style="font-weight: bold; margin-top: 10px; padding: 10px 18px;">
+        SAVUNMAYI BAŞLAT [ENTER]
+      </button>
+    </div>
+
+    <div class="footer-bar">
+      <span>← → : Hareket | SPACE : Ateş</span>
+      <button class="btn" id="sound-btn">SES: AÇIK</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("screen");
+    const ctx = canvas.getContext("2d");
+
+    let score = 0;
+    let wave = 1;
+    let lives = 3;
+    let isGameOver = true;
+    let soundEnabled = true;
+
+    const ship = { x: canvas.width / 2 - 18, y: canvas.height - 34, w: 36, h: 16, speed: 5 };
+    let bullets = [];
+    let enemyBullets = [];
+    let invaders = [];
+    let bunkers = [];
+    let invDir = 1;
+    let invStepTimer = 0;
+    let invStepInterval = 32;
+    let lastShot = 0;
+    const keys = {};
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function sfx(freq, dur, type = "square", vol = 0.035) {
+      if (!soundEnabled) return;
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur / 1000);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur / 1000);
+    }
+
+    function reportScore() {
+      document.getElementById("score").innerText = String(score).padStart(4, "0");
+      document.getElementById("wave").innerText = wave;
+      document.getElementById("lives").innerText = "♥".repeat(Math.max(0, lives));
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "RETRO_HIGH_SCORE", gameId: "space-invaders-1978", score: score }, "*");
+      }
+    }
+
+    function createWave() {
+      invaders = [];
+      const rows = 5;
+      const cols = 10;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          invaders.push({
+            x: 50 + c * 42,
+            y: 45 + r * 32,
+            w: 26,
+            h: 18,
+            row: r,
+            points: (5 - r) * 10,
+            alive: true
+          });
+        }
+      }
+      invDir = 1;
+      invStepInterval = Math.max(10, 32 - (wave - 1) * 4);
+    }
+
+    function createBunkers() {
+      bunkers = [];
+      for (let i = 0; i < 4; i++) {
+        const bx = 70 + i * 125;
+        const by = canvas.height - 95;
+        for (let r = 0; r < 3; r++) {
+          for (let c = 0; c < 5; c++) {
+            if (r === 2 && (c === 1 || c === 2 || c === 3)) continue;
+            bunkers.push({ x: bx + c * 11, y: by + r * 10, w: 10, h: 9, hp: 2 });
+          }
+        }
+      }
+    }
+
+    function startGame() {
+      score = 0;
+      wave = 1;
+      lives = 3;
+      bullets = [];
+      enemyBullets = [];
+      ship.x = canvas.width / 2 - ship.w / 2;
+      createWave();
+      createBunkers();
+      reportScore();
+      isGameOver = false;
+      document.getElementById("overlay").classList.add("hidden");
+      requestAnimationFrame(loop);
+    }
+
+    function update() {
+      if (keys["ArrowLeft"] || keys["KeyA"]) ship.x -= ship.speed;
+      if (keys["ArrowRight"] || keys["KeyD"]) ship.x += ship.speed;
+      ship.x = Math.max(12, Math.min(canvas.width - ship.w - 12, ship.x));
+
+      const now = performance.now();
+      if (keys["Space"] && now - lastShot > 280) {
+        bullets.push({ x: ship.x + ship.w / 2 - 2, y: ship.y - 8, w: 4, h: 10 });
+        lastShot = now;
+        sfx(780, 60);
+      }
+
+      // Oyuncu mermileri
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.y -= 7;
+        if (b.y < 0) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        // Siper çarpışması
+        let hitBunker = false;
+        for (let k = bunkers.length - 1; k >= 0; k--) {
+          const bk = bunkers[k];
+          if (b.x < bk.x + bk.w && b.x + b.w > bk.x && b.y < bk.y + bk.h && b.y + b.h > bk.y) {
+            bk.hp--;
+            if (bk.hp <= 0) bunkers.splice(k, 1);
+            bullets.splice(i, 1);
+            hitBunker = true;
+            break;
+          }
+        }
+        if (hitBunker) continue;
+
+        // Uzaylı çarpışması
+        for (let j = 0; j < invaders.length; j++) {
+          const inv = invaders[j];
+          if (!inv.alive) continue;
+          if (b.x < inv.x + inv.w && b.x + b.w > inv.x && b.y < inv.y + inv.h && b.y + b.h > inv.y) {
+            inv.alive = false;
+            bullets.splice(i, 1);
+            score += inv.points;
+            sfx(320, 90, "sawtooth");
+            reportScore();
+            break;
+          }
+        }
+      }
+
+      // Uzaylı hareketi
+      invStepTimer++;
+      const aliveInvaders = invaders.filter(v => v.alive);
+      if (aliveInvaders.length === 0) {
+        wave++;
+        score += 250;
+        sfx(960, 180);
+        createWave();
+        reportScore();
+        return;
+      }
+
+      const dynamicInterval = Math.max(4, Math.floor((aliveInvaders.length / 50) * invStepInterval));
+      if (invStepTimer >= dynamicInterval) {
+        invStepTimer = 0;
+        let hitEdge = false;
+        aliveInvaders.forEach(inv => {
+          inv.x += invDir * 8;
+          if (inv.x <= 14 || inv.x + inv.w >= canvas.width - 14) hitEdge = true;
+        });
+
+        sfx(150, 35);
+
+        if (hitEdge) {
+          invDir = -invDir;
+          aliveInvaders.forEach(inv => {
+            inv.y += 16;
+            if (inv.y + inv.h >= ship.y) {
+              lives = 0;
+              endGame();
+            }
+          });
+        }
+      }
+
+      // Uzaylı ateşi
+      if (Math.random() < 0.025 + wave * 0.005 && aliveInvaders.length > 0) {
+        const shooter = aliveInvaders[(Math.random() * aliveInvaders.length) | 0];
+        enemyBullets.push({ x: shooter.x + shooter.w / 2, y: shooter.y + shooter.h, w: 4, h: 10 });
+      }
+
+      for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        const eb = enemyBullets[i];
+        eb.y += 4.5;
+        if (eb.y > canvas.height) {
+          enemyBullets.splice(i, 1);
+          continue;
+        }
+
+        // Siper kontrolü
+        let hitB = false;
+        for (let k = bunkers.length - 1; k >= 0; k--) {
+          const bk = bunkers[k];
+          if (eb.x < bk.x + bk.w && eb.x + eb.w > bk.x && eb.y < bk.y + bk.h && eb.y + eb.h > bk.y) {
+            bk.hp--;
+            if (bk.hp <= 0) bunkers.splice(k, 1);
+            enemyBullets.splice(i, 1);
+            hitB = true;
+            break;
+          }
+        }
+        if (hitB) continue;
+
+        // Oyuncu gemisi kontrolü
+        if (eb.x < ship.x + ship.w && eb.x + eb.w > ship.x && eb.y < ship.y + ship.h && eb.y + eb.h > ship.y) {
+          enemyBullets.splice(i, 1);
+          lives--;
+          sfx(110, 280, "sawtooth", 0.06);
+          reportScore();
+          if (lives <= 0) {
+            endGame();
+            return;
+          }
+        }
+      }
+    }
+
+    function endGame() {
+      isGameOver = true;
+      reportScore();
+      document.getElementById("ov-title").innerText = "İSTİLA TAMAMLANDI";
+      document.getElementById("ov-desc").innerText = `Toplam Skor: ${score} | Ulaşılan Dalga: ${wave}`;
+      document.getElementById("start-btn").innerText = "TEKRAR OYNA [ENTER]";
+      document.getElementById("overlay").classList.remove("hidden");
+    }
+
+    function draw() {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Siperler
+      ctx.fillStyle = "#33ff33";
+      bunkers.forEach(bk => {
+        ctx.globalAlpha = bk.hp === 2 ? 1 : 0.55;
+        ctx.fillRect(bk.x, bk.y, bk.w, bk.h);
+      });
+      ctx.globalAlpha = 1;
+
+      // Oyuncu Gemisi
+      ctx.fillStyle = "#33ff33";
+      ctx.fillRect(ship.x, ship.y + 6, ship.w, ship.h - 6);
+      ctx.fillRect(ship.x + 12, ship.y, 12, 6);
+
+      // Uzaylılar
+      const colors = ["#ff3366", "#ff9933", "#ffff33", "#33ff33", "#33ffff"];
+      invaders.forEach(inv => {
+        if (!inv.alive) return;
+        ctx.fillStyle = colors[inv.row % colors.length];
+        ctx.fillRect(inv.x + 3, inv.y, inv.w - 6, inv.h - 4);
+        ctx.fillRect(inv.x, inv.y + 4, inv.w, inv.h - 8);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(inv.x + 6, inv.y + 5, 4, 4);
+        ctx.fillRect(inv.x + inv.w - 10, inv.y + 5, 4, 4);
+      });
+
+      // Mermiler
+      ctx.fillStyle = "#ffffff";
+      bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+      ctx.fillStyle = "#ff4444";
+      enemyBullets.forEach(eb => ctx.fillRect(eb.x, eb.y, eb.w, eb.h));
+    }
+
+    function loop() {
+      if (isGameOver) return;
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (["ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
+      keys[e.code] = true;
+      if (e.key === "Enter" && isGameOver) startGame();
+    });
+
+    document.addEventListener("keyup", e => {
+      keys[e.code] = false;
+    });
+
+    document.getElementById("start-btn").addEventListener("click", startGame);
+
+    document.getElementById("sound-btn").addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById("sound-btn").innerText = soundEnabled ? "SES: AÇIK" : "SES: KAPALI";
+    });
+
+    createWave();
+    createBunkers();
+    draw();
+  </script>
+</body>
+</html>
