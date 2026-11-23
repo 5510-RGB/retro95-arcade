@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OUTRUN 1986 - Sega Super Scaler Arcade</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #12061c;
+      color: #ffdd44;
+      font-family: "Courier New", Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .cabinet {
+      border: 3px solid #ff2a85;
+      background: #000;
+      padding: 12px;
+      box-shadow: 0 0 28px rgba(255, 42, 133, 0.3);
+      position: relative;
+      max-width: 96vw;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: bold;
+      font-size: 0.92rem;
+    }
+
+    canvas {
+      display: block;
+      background: #000;
+      border: 2px solid #ff2a85;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 0.78rem;
+    }
+
+    .btn {
+      background: #1a0626;
+      color: #ffdd44;
+      border: 1px solid #ff2a85;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .btn:hover {
+      background: #ff2a85;
+      color: #fff;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 12px;
+      background: rgba(15, 4, 24, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cabinet">
+    <div class="hud">
+      <span>SÜRE: <span id="time" style="color:#ff4466;">60</span></span>
+      <span>SKOR: <span id="score" style="color:#00ffcc;">00000</span></span>
+      <span>HIZ: <span id="speed" style="color:#ffdd44;">0</span> KM/H</span>
+      <span>ETAP: <span id="stage">1</span></span>
+    </div>
+
+    <canvas id="screen" width="580" height="420"></canvas>
+
+    <div id="overlay" class="overlay">
+      <h2 id="ov-title" style="margin: 0 0 8px 0; color: #ff2a85; letter-spacing: 3px;">SEGA // OUTRUN (1986)</h2>
+      <p id="ov-desc" style="font-size: 0.85rem; max-width: 380px; line-height: 1.5; color: #fff;">
+        Kıvrımlı sahil otoyolunda Ferrari Testarossa ile zamana karşı yarış! ← → ile virajları al, ↑ veya SPACE ile gaza bas, CHECKPOINT noktalarına ulaşarak ek süre kazan!
+      </p>
+      <button class="btn" id="start-btn" style="margin-top: 10px; padding: 10px 20px;">
+        GAZA BAS [ENTER]
+      </button>
+    </div>
+
+    <div class="footer-bar">
+      <span>← → : Viraj & Şerit | ↑ / SPACE : Gaz | ↓ : Fren</span>
+      <button class="btn" id="sound-btn">SES: AÇIK</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("screen");
+    const ctx = canvas.getContext("2d");
+
+    const HORIZON_Y = 185;
+    const ROAD_LINES = canvas.height - HORIZON_Y;
+
+    let score = 0;
+    let timeLeft = 60;
+    let stage = 1;
+    let distance = 0;
+    let nextCheckpoint = 2200;
+    let speed = 0;
+    let maxSpeed = 290;
+    let playerX = 0; // -1.2 .. 1.2
+    let curve = 0;
+    let targetCurve = 0;
+    let curveTimer = 0;
+    let isGameOver = true;
+    let soundEnabled = true;
+    let clockTimer = null;
+
+    let traffic = [];
+    const keys = {};
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, dur, type = "square", vol = 0.03) {
+      if (!soundEnabled) return;
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur / 1000);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur / 1000);
+    }
+
+    function reportScore() {
+      document.getElementById("time").innerText = Math.ceil(timeLeft);
+      document.getElementById("score").innerText = String(Math.floor(score)).padStart(5, "0");
+      document.getElementById("speed").innerText = Math.floor(speed);
+      document.getElementById("stage").innerText = stage;
+
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "RETRO_HIGH_SCORE", gameId: "outrun-1986", score: Math.floor(score) }, "*");
+      }
+    }
+
+    function startGame() {
+      score = 0;
+      timeLeft = 50;
+      stage = 1;
+      distance = 0;
+      nextCheckpoint = 2200;
+      speed = 160;
+      playerX = 0;
+      curve = 0;
+      targetCurve = 0;
+      traffic = [];
+      isGameOver = false;
+      reportScore();
+      document.getElementById("overlay").classList.add("hidden");
+
+      if (clockTimer) clearInterval(clockTimer);
+      clockTimer = setInterval(() => {
+        if (isGameOver) return;
+        timeLeft -= 1;
+        if (timeLeft <= 0) {
+          timeLeft = 0;
+          endGame("SÜRE DOLDU!");
+        }
+        reportScore();
+      }, 1000);
+
+      playTone(520, 120);
+      requestAnimationFrame(loop);
+    }
+
+    function endGame(title) {
+      isGameOver = true;
+      if (clockTimer) clearInterval(clockTimer);
+      reportScore();
+      document.getElementById("ov-title").innerText = title;
+      document.getElementById("ov-desc").innerText = `Toplam Skor: ${Math.floor(score)} | Ulaşılan Etap: ${stage}`;
+      document.getElementById("start-btn").innerText = "TEKRAR YARIŞ [ENTER]";
+      document.getElementById("overlay").classList.remove("hidden");
+    }
+
+    function update() {
+      const accel = keys["ArrowUp"] || keys["KeyW"] || keys["Space"];
+      const brake = keys["ArrowDown"] || keys["KeyS"];
+
+      if (brake) {
+        speed = Math.max(60, speed - 4.5);
+      } else if (accel) {
+        speed = Math.min(maxSpeed, speed + 2.2);
+      } else {
+        // Otomatik seyir hızı + gazla turbo
+        const cruise = 215;
+        speed += (cruise - speed) * 0.04;
+      }
+
+      // Yol dışına çıkınca hız düşer
+      if (Math.abs(playerX) > 0.92) {
+        speed = Math.max(95, speed - 3.5);
+      }
+
+      const steer = 0.036 * (speed / 200);
+      if (keys["ArrowLeft"] || keys["KeyA"]) playerX -= steer;
+      if (keys["ArrowRight"] || keys["KeyD"]) playerX += steer;
+
+      // Viraj merkezkaç kuvveti
+      playerX -= curve * (speed / maxSpeed) * 0.022;
+      playerX = Math.max(-1.35, Math.min(1.35, playerX));
+
+      // Viraj değişimi
+      curveTimer++;
+      if (curveTimer > 140) {
+        curveTimer = 0;
+        const choices = [-0.85, -0.45, 0, 0.45, 0.85];
+        targetCurve = choices[(Math.random() * choices.length) | 0];
+      }
+      curve += (targetCurve - curve) * 0.02;
+
+      const stepDist = speed * 0.14;
+      distance += stepDist;
+      score += stepDist * 0.8;
+
+      // Checkpoint kontrolü
+      if (distance >= nextCheckpoint) {
+        stage++;
+        timeLeft += 28;
+        nextCheckpoint += 2400 + stage * 300;
+        score += 1500;
+        playTone(880, 120);
+        setTimeout(() => playTone(1174, 200), 110);
+      }
+
+      // Trafik araçları üretimi
+      if (traffic.length < 4 && Math.random() < 0.04) {
+        const lanes = [-0.55, 0, 0.55];
+        const colors = ["#00e5ff", "#ffea00", "#ffffff", "#b388ff"];
+        traffic.push({
+          lane: lanes[(Math.random() * lanes.length) | 0],
+          z: 1.0, // 1.0 = ufuk, 0.0 = oyuncu hizası
+          color: colors[(Math.random() * colors.length) | 0]
+        });
+      }
+
+      for (let i = traffic.length - 1; i >= 0; i--) {
+        const car = traffic[i];
+        car.z -= (speed - 110) * 0.000095;
+
+        // Oyuncu hizasına geldiğinde çarpışma kontrolü
+        if (car.z < 0.12 && car.z > 0.01) {
+          if (Math.abs(playerX - car.lane) < 0.34) {
+            speed = 85;
+            playTone(110, 220, "sawtooth", 0.06);
+            traffic.splice(i, 1);
+            continue;
+          }
+        }
+
+        if (car.z <= 0) {
+          traffic.splice(i, 1);
+          score += 100;
+        }
+      }
+
+      reportScore();
+    }
+
+    function draw() {
+      // Synthwave / OutRun Gün Batımı Gökyüzü
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, HORIZON_Y);
+      skyGrad.addColorStop(0, "#1a0933");
+      skyGrad.addColorStop(0.55, "#6b114d");
+      skyGrad.addColorStop(1, "#ff6a00");
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, canvas.width, HORIZON_Y);
+
+      // Güneş
+      const sunX = canvas.width / 2 - curve * 70;
+      ctx.fillStyle = "#ffdd33";
+      ctx.beginPath();
+      ctx.arc(sunX, HORIZON_Y - 28, 46, Math.PI, 0);
+      ctx.fill();
+
+      // Ufuk Dağları
+      ctx.fillStyle = "#2b0938";
+      ctx.beginPath();
+      ctx.moveTo(0, HORIZON_Y);
+      for (let x = 0; x <= canvas.width; x += 40) {
+        const h = 15 + Math.sin(x * 0.04 + curve) * 14;
+        ctx.lineTo(x, HORIZON_Y - h);
+      }
+      ctx.lineTo(canvas.width, HORIZON_Y);
+      ctx.fill();
+
+      // Pseudo-3D Satır Satır Yol Tarama (Sega Super Scaler)
+      for (let i = 0; i < ROAD_LINES; i++) {
+        const y = HORIZON_Y + i;
+        const p = i / ROAD_LINES; // 0 (ufuk) -> 1 (alt ekran)
+        const perspective = 0.12 + p * 0.88;
+
+        // Viraj bükülmesi
+        const curveOffset = Math.pow(1 - p, 2) * curve * 220;
+        const playerOffset = playerX * perspective * 195;
+        const roadCenter = canvas.width / 2 + curveOffset - playerOffset;
+        const roadHalfW = perspective * 230;
+
+        // Derinlik şeridi animasyonu
+        const stripeIndex = Math.floor((distance * 0.12) + (1 / (p + 0.05)) * 6);
+        const isDark = stripeIndex % 2 === 0;
+
+        // Kum / Çimen Zemin
+        ctx.fillStyle = isDark ? "#c29b61" : "#d4af73";
+        ctx.fillRect(0, y, canvas.width, 1);
+
+        // Bordür (Kırmızı / Beyaz)
+        const curbW = roadHalfW * 1.12;
+        ctx.fillStyle = isDark ? "#ff2244" : "#ffffff";
+        ctx.fillRect(roadCenter - curbW, y, curbW * 2, 1);
+
+        // Asfalt
+        ctx.fillStyle = isDark ? "#464852" : "#50535e";
+        ctx.fillRect(roadCenter - roadHalfW, y, roadHalfW * 2, 1);
+
+        // Şerit Çizgileri
+        if (!isDark) {
+          ctx.fillStyle = "#ffffff";
+          const lw = Math.max(1, perspective * 5);
+          ctx.fillRect(roadCenter - roadHalfW * 0.33, y, lw, 1);
+          ctx.fillRect(roadCenter + roadHalfW * 0.33, y, lw, 1);
+        }
+      }
+
+      // Trafikteki Araçları Uzaktan Yakına Çiz
+      const sortedTraffic = [...traffic].sort((a, b) => b.z - a.z);
+      sortedTraffic.forEach(car => {
+        const p = 1 - car.z; // 0 ufuk -> 1 yakın
+        if (p <= 0 || p > 1) return;
+        const y = HORIZON_Y + p * ROAD_LINES;
+        const perspective = 0.12 + p * 0.88;
+        const curveOffset = Math.pow(1 - p, 2) * curve * 220;
+        const playerOffset = playerX * perspective * 195;
+        const roadCenter = canvas.width / 2 + curveOffset - playerOffset;
+        const roadHalfW = perspective * 230;
+
+        const carX = roadCenter + car.lane * roadHalfW * 0.7;
+        const cw = Math.max(10, perspective * 76);
+        const ch = Math.max(6, perspective * 42);
+
+        ctx.fillStyle = car.color;
+        ctx.fillRect(carX - cw / 2, y - ch, cw, ch);
+        ctx.fillStyle = "#111";
+        ctx.fillRect(carX - cw * 0.35, y - ch * 0.85, cw * 0.7, ch * 0.35);
+        ctx.fillStyle = "#ff1100";
+        ctx.fillRect(carX - cw * 0.42, y - ch * 0.35, cw * 0.2, ch * 0.18);
+        ctx.fillRect(carX + cw * 0.22, y - ch * 0.35, cw * 0.2, ch * 0.18);
+      });
+
+      // Oyuncu Ferrari Testarossa (Arkadan Görünüm)
+      const px = canvas.width / 2;
+      const py = canvas.height - 18;
+      // Gölge
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(px - 48, py - 4, 96, 8);
+      // Tekerlekler
+      ctx.fillStyle = "#111";
+      ctx.fillRect(px - 46, py - 18, 16, 18);
+      ctx.fillRect(px + 30, py - 18, 16, 18);
+      // Alt Gövde
+      ctx.fillStyle = "#e60026";
+      ctx.fillRect(px - 42, py - 28, 84, 22);
+      // Üst Kabin
+      ctx.fillStyle = "#ff1a40";
+      ctx.fillRect(px - 30, py - 42, 60, 16);
+      // Arka Cam
+      ctx.fillStyle = "#1a2436";
+      ctx.fillRect(px - 24, py - 39, 48, 11);
+      // Stop Lambaları ve Plaka
+      ctx.fillStyle = "#111";
+      ctx.fillRect(px - 38, py - 20, 76, 7);
+      ctx.fillStyle = "#ffaa00";
+      ctx.fillRect(px - 36, py - 19, 16, 5);
+      ctx.fillRect(px + 20, py - 19, 16, 5);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(px - 8, py - 19, 16, 5);
+    }
+
+    function loop() {
+      if (isGameOver) return;
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
+      keys[e.code] = true;
+      if (e.key === "Enter" && isGameOver) startGame();
+    });
+
+    document.addEventListener("keyup", e => {
+      keys[e.code] = false;
+    });
+
+    document.getElementById("start-btn").addEventListener("click", startGame);
+
+    document.getElementById("sound-btn").addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById("sound-btn").innerText = soundEnabled ? "SES: AÇIK" : "SES: KAPALI";
+    });
+
+    draw();
+  </script>
+</body>
+</html>

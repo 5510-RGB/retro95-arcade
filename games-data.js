@@ -144,5 +144,65 @@ window.GAMES_CATALOG = [
       { key: "DUVAR Butonu", action: "Duvarlardan Geçişli veya Çarpışmalı Mod" },
       { key: "P", action: "Oyunu Duraklat / Devam Ettir" }
     ]
+  },
+  {
+    id: "road-fighter-1984",
+    title: "ROAD FIGHTER (1984)",
+    year: 1984,
+    decade: "80s",
+    category: "Yarış",
+    developer: "Konami",
+    platform: "Konami Arcade / NES",
+    path: "games/road-fighter/index.html",
+    icon: "🏎️",
+    accentColor: "#b71c1c",
+    featured: true,
+    shortDesc: "Kırmızı spor arabanızla yoğun otoyol trafiğinde makas atın, FUEL araçlarını toplayarak benzininizi bitirmeden tam gaz ilerleyin!",
+    story: "1984 yılında Konami tarafından önce arcade kabinlerine, ardından Nintendo Entertainment System (NES / Atari kasetleri) platformuna çıkarılan Road Fighter, Türkiye'de 8-bit konsol döneminin en unutulmaz araba yarışı oyunudur. Şerit değiştiren mavi araçlardan, TIR'lardan ve yoldaki yağ birikintilerinden kaçarken pembe yakıt araçlarını yakalamanız gerekir.",
+    controls: [
+      { key: "← / → veya A / D", action: "Şerit Değiştir / Direksiyon" },
+      { key: "↑ veya SPACE", action: "Turbo Gaz (320 km/h)" },
+      { key: "↓", action: "Yavaşla / Fren" }
+    ]
+  },
+  {
+    id: "outrun-1986",
+    title: "OUTRUN (1986)",
+    year: 1986,
+    decade: "80s",
+    category: "Yarış",
+    developer: "Yu Suzuki (Sega AM2)",
+    platform: "Sega Arcade Kabini",
+    path: "games/outrun/index.html",
+    icon: "🌴",
+    accentColor: "#ff2a85",
+    featured: true,
+    shortDesc: "Arkadan görünümlü 3D kıvrımlı otoyolda Ferrari Testarossa ile gün batımına doğru zamana karşı yarışın!",
+    story: "1986 yılında Sega'nın efsanevi tasarımcısı Yu Suzuki tarafından geliştirilen OutRun, 'Super Scaler' 3D yol teknolojisi, hareketli direksiyon kabini ve seçilebilir radyo müzikleriyle arcade yarış oyunlarında çığır açtı. Virajlarda merkezkaç kuvvetine karşı direksiyonu dengede tutup süre bitmeden Checkpoint noktalarına ulaşmalısınız.",
+    controls: [
+      { key: "← / → veya A / D", action: "Virajları Al / Direksiyon" },
+      { key: "↑ veya SPACE", action: "Tam Gaz Hızlan" },
+      { key: "↓", action: "Keskin Virajlarda Fren" }
+    ]
+  },
+  {
+    id: "spy-hunter-1983",
+    title: "SPY HUNTER (1983)",
+    year: 1983,
+    decade: "80s",
+    category: "Yarış",
+    developer: "Bally Midway",
+    platform: "Midway Arcade / Commodore 64",
+    path: "games/spy-hunter/index.html",
+    icon: "🕵️",
+    accentColor: "#007766",
+    featured: true,
+    shortDesc: "Makineli tüfekli G-6155 Interceptor ajan arabasıyla otoyoldaki zırhlı suikastçı araçlarını imha edin!",
+    story: "1983 yılında Bally Midway tarafından yayınlanan Spy Hunter, James Bond filmlerinden ilham alan yüksek tempolu bir araçlı aksiyon klasiğidir. Otoyolda peşinize düşen düşman araçlarını çift makineli tüfekle vurabilir, kırmızı Silah Kamyonuna (W-VAN) yanaşarak zırhınızı ve seri ateş gücünüzü yenileyebilirsiniz.",
+    controls: [
+      { key: "Ok Tuşları / WASD", action: "Ajan Arabasını Yönlendir" },
+      { key: "SPACE", action: "Çift Makineli Tüfek Ateşle" },
+      { key: "W-VAN Kamyonu", action: "Zırhı %100 Yenile ve Seri Ateş Al" }
+    ]
   }
 ];

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPY HUNTER 1983 - Bally Midway Arcade</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #050b0e;
+      color: #00ffcc;
+      font-family: "Courier New", Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .cabinet {
+      border: 3px solid #00ffcc;
+      background: #000;
+      padding: 12px;
+      box-shadow: 0 0 25px rgba(0, 255, 204, 0.25);
+      position: relative;
+      max-width: 96vw;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: bold;
+      font-size: 0.92rem;
+      border-bottom: 1px dashed #007766;
+      padding-bottom: 5px;
+    }
+
+    canvas {
+      display: block;
+      background: #143828;
+      border: 2px solid #007766;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 0.78rem;
+    }
+
+    .btn {
+      background: #000;
+      color: #00ffcc;
+      border: 1px solid #00ffcc;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .btn:hover {
+      background: #00ffcc;
+      color: #000;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 12px;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cabinet">
+    <div class="hud">
+      <span>SKOR: <span id="score">00000</span></span>
+      <span>ZIRH: <span id="armor" style="color:#ffcc00;">100%</span></span>
+      <span>CAN: <span id="lives" style="color:#ff3366;">🏎️🏎️🏎️</span></span>
+    </div>
+
+    <canvas id="highway" width="460" height="480"></canvas>
+
+    <div id="overlay" class="overlay">
+      <h2 id="ov-title" style="margin: 0 0 8px 0; letter-spacing: 3px;">SPY HUNTER // 1983</h2>
+      <p id="ov-desc" style="font-size: 0.85rem; max-width: 350px; line-height: 1.5; color: #ddd;">
+        G-6155 Interceptor ajan arabanla otoyoldaki zırhlı düşman araçlarını SPACE tuşuyla (Makineli Tüfek) imha et! Kırmızı silah kamyonuna binerek zırhını yenile.
+      </p>
+      <button class="btn" id="start-btn" style="margin-top: 10px; padding: 10px 18px;">
+        GÖREVE BAŞLA [ENTER]
+      </button>
+    </div>
+
+    <div class="footer-bar">
+      <span>← → ↑ ↓ : Sürüş | SPACE : Makineli Tüfek</span>
+      <button class="btn" id="sound-btn">SES: AÇIK</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("highway");
+    const ctx = canvas.getContext("2d");
+
+    const ROAD_L = 85;
+    const ROAD_R = 375;
+    const ROAD_W = ROAD_R - ROAD_L;
+
+    let score = 0;
+    let armor = 100;
+    let lives = 3;
+    let roadScroll = 0;
+    let isGameOver = true;
+    let soundEnabled = true;
+
+    const agent = { x: 215, y: 360, w: 30, h: 52, rapidTimer: 0 };
+    let bullets = [];
+    let enemies = [];
+    let explosions = [];
+    let lastShot = 0;
+    let spawnClock = 0;
+    const keys = {};
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function sfx(freq, dur, type = "square", vol = 0.035) {
+      if (!soundEnabled) return;
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur / 1000);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur / 1000);
+    }
+
+    function reportScore() {
+      document.getElementById("score").innerText = String(Math.floor(score)).padStart(5, "0");
+      document.getElementById("armor").innerText = `${Math.max(0, armor)}%`;
+      document.getElementById("lives").innerText = "🏎️".repeat(Math.max(0, lives));
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "RETRO_HIGH_SCORE", gameId: "spy-hunter-1983", score: Math.floor(score) }, "*");
+      }
+    }
+
+    function startGame() {
+      score = 0;
+      armor = 100;
+      lives = 3;
+      agent.x = 215;
+      agent.y = 360;
+      agent.rapidTimer = 0;
+      bullets = [];
+      enemies = [];
+      explosions = [];
+      reportScore();
+      isGameOver = false;
+      document.getElementById("overlay").classList.add("hidden");
+      sfx(440, 100);
+      requestAnimationFrame(loop);
+    }
+
+    function spawnUnit() {
+      const lanes = [105, 160, 215, 270, 325];
+      const lx = lanes[(Math.random() * lanes.length) | 0];
+      const r = Math.random();
+
+      if (r < 0.14) {
+        // Dost Silah & Zırh Kamyonu (Weapons Van)
+        enemies.push({
+          x: lx,
+          y: -80,
+          w: 38,
+          h: 72,
+          hp: 99,
+          type: "van",
+          color: "#e53935",
+          vy: 3.5
+        });
+      } else if (r < 0.5) {
+        // Zırhlı Kurşun Geçirmez "Enforcer" (Yoldan dışarı itilerek veya 4 vuruşla yok edilir)
+        enemies.push({
+          x: lx,
+          y: -65,
+          w: 32,
+          h: 54,
+          hp: 3,
+          type: "enforcer",
+          color: "#9c27b0",
+          vy: 4.2
+        });
+      } else {
+        // Suikastçı "Switchblade" Aracı (Oyuncuya doğru kıran hızlı düşman)
+        enemies.push({
+          x: lx,
+          y: -60,
+          w: 30,
+          h: 50,
+          hp: 1,
+          type: "chaser",
+          color: "#29b6f6",
+          vy: 5.0
+        });
+      }
+    }
+
+    function overlap(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function update() {
+      const moveSpeed = 4.8;
+      if (keys["ArrowLeft"] || keys["KeyA"]) agent.x -= moveSpeed;
+      if (keys["ArrowRight"] || keys["KeyD"]) agent.x += moveSpeed;
+      if (keys["ArrowUp"] || keys["KeyW"]) agent.y -= moveSpeed * 0.8;
+      if (keys["ArrowDown"] || keys["KeyS"]) agent.y += moveSpeed * 0.8;
+
+      agent.x = Math.max(ROAD_L + 6, Math.min(ROAD_R - agent.w - 6, agent.x));
+      agent.y = Math.max(90, Math.min(canvas.height - agent.h - 14, agent.y));
+
+      roadScroll = (roadScroll + 8) % 48;
+      score += 0.4;
+      if (agent.rapidTimer > 0) agent.rapidTimer--;
+
+      // Makineli tüfek ateşi
+      const now = performance.now();
+      const cooldown = agent.rapidTimer > 0 ? 95 : 165;
+      if (keys["Space"] && now - lastShot > cooldown) {
+        bullets.push({ x: agent.x + 5, y: agent.y - 8, w: 3, h: 12 });
+        bullets.push({ x: agent.x + agent.w - 8, y: agent.y - 8, w: 3, h: 12 });
+        lastShot = now;
+        sfx(680, 45, "square", 0.025);
+      }
+
+      // Mermiler
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.y -= 11;
+        if (b.y < -20) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        for (let j = enemies.length - 1; j >= 0; j--) {
+          const e = enemies[j];
+          if (e.type === "van") continue;
+          if (overlap(b, e)) {
+            bullets.splice(i, 1);
+            e.hp--;
+            sfx(260, 45, "sawtooth");
+            if (e.hp <= 0) {
+              explosions.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, r: 6, maxR: 28 });
+              score += e.type === "enforcer" ? 300 : 150;
+              sfx(130, 160, "sawtooth", 0.05);
+              enemies.splice(j, 1);
+              reportScore();
+            }
+            break;
+          }
+        }
+      }
+
+      spawnClock++;
+      if (spawnClock > 36) {
+        spawnClock = 0;
+        spawnUnit();
+      }
+
+      // Düşman ve Kamyon Hareketleri
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        e.y += e.vy;
+
+        if (e.type === "chaser") {
+          const dx = agent.x - e.x;
+          e.x += Math.sign(dx) * 1.1;
+        }
+
+        if (overlap(agent, e)) {
+          if (e.type === "van") {
+            armor = 100;
+            agent.rapidTimer = 300;
+            score += 400;
+            sfx(920, 140);
+            enemies.splice(i, 1);
+            reportScore();
+            continue;
+          } else {
+            explosions.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, r: 8, maxR: 30 });
+            enemies.splice(i, 1);
+            armor -= 35;
+            sfx(110, 220, "sawtooth", 0.06);
+            if (armor <= 0) {
+              lives--;
+              armor = 100;
+              if (lives <= 0) {
+                endGame();
+                return;
+              }
+            }
+            reportScore();
+            continue;
+          }
+        }
+
+        if (e.y > canvas.height + 90) {
+          enemies.splice(i, 1);
+        }
+      }
+
+      // Patlama Efektleri
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        explosions[i].r += 2.2;
+        if (explosions[i].r >= explosions[i].maxR) explosions.splice(i, 1);
+      }
+
+      if (Math.floor(score) % 10 === 0) reportScore();
+    }
+
+    function endGame() {
+      isGameOver = true;
+      reportScore();
+      document.getElementById("ov-title").innerText = "GÖREV SONA ERDİ";
+      document.getElementById("ov-desc").innerText = `Ajan Skoru: ${Math.floor(score)}`;
+      document.getElementById("start-btn").innerText = "YENİ GÖREV [ENTER]";
+      document.getElementById("overlay").classList.remove("hidden");
+    }
+
+    function drawVehicle(x, y, w, h, color, tag = "") {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(x - 2, y + 6, 3, 10);
+      ctx.fillRect(x + w - 1, y + 6, 3, 10);
+      ctx.fillRect(x - 2, y + h - 16, 3, 10);
+      ctx.fillRect(x + w - 1, y + h - 16, 3, 10);
+
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+
+      ctx.fillStyle = "#102028";
+      ctx.fillRect(x + 4, y + 10, w - 8, 12);
+
+      if (tag) {
+        ctx.fillStyle = "#fff";
+        ctx.font = 'bold 10px "Courier New"';
+        ctx.textAlign = "center";
+        ctx.fillText(tag, x + w / 2, y + h / 2 + 10);
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = "#143828";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Asfalt
+      ctx.fillStyle = "#2b303a";
+      ctx.fillRect(ROAD_L, 0, ROAD_W, canvas.height);
+
+      // Kenar Bariyerleri
+      ctx.fillStyle = "#00ffcc";
+      ctx.fillRect(ROAD_L - 6, 0, 6, canvas.height);
+      ctx.fillRect(ROAD_R, 0, 6, canvas.height);
+
+      // Şeritler
+      ctx.fillStyle = "#e0e0e0";
+      for (let l = 1; l <= 3; l++) {
+        const lx = ROAD_L + (ROAD_W / 4) * l;
+        for (let y = -48; y < canvas.height + 48; y += 48) {
+          ctx.fillRect(lx - 2, y + roadScroll, 4, 24);
+        }
+      }
+
+      // Mermiler
+      ctx.fillStyle = "#ffff00";
+      bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+      // Düşman Araçlar ve Silah Kamyonu
+      enemies.forEach(e => {
+        drawVehicle(e.x, e.y, e.w, e.h, e.color, e.type === "van" ? "W-VAN" : "");
+      });
+
+      // Ajan Interceptor (Gümüş/Beyaz Spor Araba)
+      drawVehicle(agent.x, agent.y, agent.w, agent.h, agent.rapidTimer > 0 ? "#00ffcc" : "#f5f5f5", "007");
+
+      // Patlamalar
+      explosions.forEach(ex => {
+        ctx.beginPath();
+        ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI * 2);
+        ctx.fillStyle = ex.r < 16 ? "#ffff00" : "#ff5722";
+        ctx.fill();
+      });
+    }
+
+    function loop() {
+      if (isGameOver) return;
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
+      keys[e.code] = true;
+      if (e.key === "Enter" && isGameOver) startGame();
+    });
+
+    document.addEventListener("keyup", e => {
+      keys[e.code] = false;
+    });
+
+    document.getElementById("start-btn").addEventListener("click", startGame);
+
+    document.getElementById("sound-btn").addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById("sound-btn").innerText = soundEnabled ? "SES: AÇIK" : "SES: KAPALI";
+    });
+
+    draw();
+  </script>
+</body>
+</html>
